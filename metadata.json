@@ -1,0 +1,5 @@
+{
+  "name": "Research Project Compass",
+  "description": "A high-utility research planning tool blending the Scientific Method, Heilmeier Catechism, and Lean Canvas principles. Features an AI-powered onboarding wizard, logic thread linking, and active kill-switch management.",
+  "requestFramePermissions": []
+}
