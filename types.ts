@@ -1,3 +1,4 @@
+
 export type BlockId = 
   | 'problem_context' | 'prior_work' | 'gaps_limits' | 'current_solutions'
   | 'questions_hypotheses' | 'aims_objectives' | 'novelty' | 'contribution'
@@ -33,9 +34,11 @@ export interface Thread {
 }
 
 export interface ProjectState {
+  id: string;
   name: string;
   blocks: Record<BlockId, CanvasBlock>;
   threads: Thread[];
+  updatedAt: number;
 }
 
 export interface WizardQuestion {
