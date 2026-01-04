@@ -48,3 +48,9 @@ export interface WizardQuestion {
   description: string;
   hints: string[];
 }
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+}

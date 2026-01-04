@@ -1,6 +1,19 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 
+// Helper to define block schema subsets for modular processing
+const generateBlockSchema = (keys: string[]) => {
+  const properties: any = {};
+  keys.forEach(key => {
+    properties[key] = { type: Type.ARRAY, items: { type: Type.STRING } };
+  });
+  return {
+    type: Type.OBJECT,
+    properties,
+    required: keys
+  };
+};
+
 export const detectJargon = async (text: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
@@ -75,7 +88,6 @@ export const runOrphanCheck = async (blocks: any) => {
     model: "gemini-3-flash-preview",
     contents: prompt,
     config: {
-      // Removed thinking budget for absolute maximum speed on this diagnostic task
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -88,53 +100,10 @@ export const runOrphanCheck = async (blocks: any) => {
 
 export const fixLogicalGap = async (blocks: any, warning: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
-    acc[key] = val.items.map((i: any) => i.text);
-    return acc;
-  }, {});
-
-  const prompt = `The following research project has a logical gap: "${warning}".
-  
-  Current Project Canvas: ${JSON.stringify(simplifiedBlocks)}
-  
-  TASK: Resolve this specific logical gap by modifying the relevant canvas blocks. 
-  
-  Return a JSON object with the block IDs as keys, where each value is an array of strings representing the NEW, complete set of items for that block. 
-  Only include keys for blocks that require changes.`;
-
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          problem_context: { type: Type.ARRAY, items: { type: Type.STRING } },
-          prior_work: { type: Type.ARRAY, items: { type: Type.STRING } },
-          gaps_limits: { type: Type.ARRAY, items: { type: Type.STRING } },
-          current_solutions: { type: Type.ARRAY, items: { type: Type.STRING } },
-          questions_hypotheses: { type: Type.ARRAY, items: { type: Type.STRING } },
-          aims_objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
-          novelty: { type: Type.ARRAY, items: { type: Type.STRING } },
-          contribution: { type: Type.ARRAY, items: { type: Type.STRING } },
-          stakeholders: { type: Type.ARRAY, items: { type: Type.STRING } },
-          impact: { type: Type.ARRAY, items: { type: Type.STRING } },
-          methodology: { type: Type.ARRAY, items: { type: Type.STRING } },
-          data: { type: Type.ARRAY, items: { type: Type.STRING } },
-          resources: { type: Type.ARRAY, items: { type: Type.STRING } },
-          evidence_criteria: { type: Type.ARRAY, items: { type: Type.STRING } },
-          milestones: { type: Type.ARRAY, items: { type: Type.STRING } },
-          decision_points: { type: Type.ARRAY, items: { type: Type.STRING } },
-          risks: { type: Type.ARRAY, items: { type: Type.STRING } },
-          contingencies: { type: Type.ARRAY, items: { type: Type.STRING } },
-          timeline: { type: Type.ARRAY, items: { type: Type.STRING } },
-          budget: { type: Type.ARRAY, items: { type: Type.STRING } },
-          ethics: { type: Type.ARRAY, items: { type: Type.STRING } },
-          access: { type: Type.ARRAY, items: { type: Type.STRING } }
-        }
-      }
-    }
+    contents: `The following research project has a logical gap: "${warning}". Resolve it.`,
+    config: { responseMimeType: "application/json" }
   });
   return JSON.parse(response.text);
 };
@@ -143,46 +112,13 @@ export const processWizardInput = async (question: string, answer: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Based on the user's answer: "${answer}" to question: "${question}", map the information.
-    
-    'contribution' category MUST refer to KEY DELIVERABLES/ADVANCES.
-    
-    Return a JSON object with relevant block IDs.`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          problem_context: { type: Type.STRING },
-          prior_work: { type: Type.STRING },
-          gaps_limits: { type: Type.STRING },
-          current_solutions: { type: Type.STRING },
-          questions_hypotheses: { type: Type.STRING },
-          aims_objectives: { type: Type.STRING },
-          novelty: { type: Type.STRING },
-          contribution: { type: Type.STRING },
-          stakeholders: { type: Type.STRING },
-          impact: { type: Type.STRING },
-          methodology: { type: Type.STRING },
-          data: { type: Type.STRING },
-          resources: { type: Type.STRING },
-          evidence_criteria: { type: Type.STRING },
-          milestones: { type: Type.STRING },
-          decision_points: { type: Type.STRING },
-          risks: { type: Type.STRING },
-          contingencies: { type: Type.STRING },
-          timeline: { type: Type.STRING },
-          budget: { type: Type.STRING },
-          ethics: { type: Type.STRING },
-          access: { type: Type.STRING }
-        }
-      }
-    }
+    contents: `Map answer: "${answer}" to question: "${question}".`,
+    config: { responseMimeType: "application/json" }
   });
   return JSON.parse(response.text);
 };
 
-export const processDocumentImport = async (data: string, mimeType: string) => {
+export const processDocumentImport = async (data: string, mimeType: string, onUpdate?: (stage: string) => void) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   let base64Data = data;
@@ -190,60 +126,96 @@ export const processDocumentImport = async (data: string, mimeType: string) => {
     base64Data = data.split('base64,')[1];
   }
 
-  const systemPrompt = `You are an Expert Research Analyst. Extract research components fast.
-  Contribution category refers ONLY to KEY DELIVERABLES and ADVANCES. No author names.`;
+  const groups = [
+    {
+      name: "Background & Core Claims",
+      blocks: ['problem_context', 'prior_work', 'gaps_limits', 'questions_hypotheses', 'novelty', 'contribution']
+    },
+    {
+      name: "Execution & Logistics",
+      blocks: ['aims_objectives', 'methodology', 'data', 'resources', 'milestones', 'decision_points']
+    },
+    {
+      name: "Value, Strategy & Constraints",
+      blocks: ['stakeholders', 'impact', 'evidence_criteria', 'risks', 'contingencies', 'timeline', 'budget', 'ethics', 'access']
+    }
+  ];
 
-  const parts: any[] = [{ text: systemPrompt }];
-  const binaryMimeTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+  const processGroup = async (group: {name: string, blocks: string[]}) => {
+    if (onUpdate) onUpdate(`Analyzing ${group.name}...`);
+    
+    const prompt = `You are a research analyst. From the provided PDF, extract technical details for these specific blocks: ${group.blocks.join(', ')}.
+    
+    DEFINITIONS:
+    - contribution: Deliverables/advances.
+    - questions_hypotheses: Falsifiable predictions.
+    - evidence_criteria: Success metrics/benchmarks.
+    - novelty: Technical differentiators.
+    
+    Return ONLY JSON. Ensure maximum coverage for these specific blocks.`;
 
-  if (binaryMimeTypes.includes(mimeType)) {
-    parts.push({ inlineData: { data: base64Data, mimeType: 'application/pdf' } });
-  } else {
-    parts.push({ text: `RAW DOCUMENT DATA:\n\n${data}` });
-  }
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [
+        { text: prompt },
+        { inlineData: { data: base64Data, mimeType: mimeType } }
+      ],
+      config: {
+        temperature: 0.1,
+        responseMimeType: "application/json",
+        responseSchema: generateBlockSchema(group.blocks)
+      }
+    });
+
+    try {
+      return JSON.parse(response.text);
+    } catch (e) {
+      console.error(`Failed to parse group: ${group.name}`, e);
+      return {};
+    }
+  };
+
+  const results = await Promise.all(groups.map(g => processGroup(g)));
+  return results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+};
+
+export const refineCanvas = async (blocks: any) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
+    const items = val.items.map((i: any) => i.text).filter((t: string) => t.trim().length > 0);
+    if (items.length > 0) acc[key] = items;
+    return acc;
+  }, {});
+
+  const blockKeys = Object.keys(simplifiedBlocks);
+  if (blockKeys.length === 0) return {};
+
+  const prompt = `As a professional scientific editor, refine the following research canvas data. 
+  TASK:
+  1. Improve technical wording and framing for clarity and academic professionalism.
+  2. Consolidate similar or redundant bullet points within the same block into single, comprehensive statements.
+  3. CRITICAL RULE: NEVER change the fundamental intent, meaning, or specific data points of the user's original input.
+  4. Ensure 'contribution' blocks describe key scientific deliverables or advances.
+
+  Return a JSON object mapping the provided block IDs to their NEW arrays of refined strings.
+  
+  DATA: ${JSON.stringify(simplifiedBlocks)}`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: { parts },
+    contents: prompt,
     config: {
-      thinkingConfig: { thinkingBudget: 8192 }, 
       temperature: 0.1,
       responseMimeType: "application/json",
-      seed: 42,
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          problem_context: { type: Type.ARRAY, items: { type: Type.STRING } },
-          prior_work: { type: Type.ARRAY, items: { type: Type.STRING } },
-          gaps_limits: { type: Type.ARRAY, items: { type: Type.STRING } },
-          current_solutions: { type: Type.ARRAY, items: { type: Type.STRING } },
-          questions_hypotheses: { type: Type.ARRAY, items: { type: Type.STRING } },
-          aims_objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
-          novelty: { type: Type.ARRAY, items: { type: Type.STRING } },
-          contribution: { type: Type.ARRAY, items: { type: Type.STRING } },
-          stakeholders: { type: Type.ARRAY, items: { type: Type.STRING } },
-          impact: { type: Type.ARRAY, items: { type: Type.STRING } },
-          methodology: { type: Type.ARRAY, items: { type: Type.STRING } },
-          data: { type: Type.ARRAY, items: { type: Type.STRING } },
-          resources: { type: Type.ARRAY, items: { type: Type.STRING } },
-          evidence_criteria: { type: Type.ARRAY, items: { type: Type.STRING } },
-          milestones: { type: Type.ARRAY, items: { type: Type.STRING } },
-          decision_points: { type: Type.ARRAY, items: { type: Type.STRING } },
-          risks: { type: Type.ARRAY, items: { type: Type.STRING } },
-          contingencies: { type: Type.ARRAY, items: { type: Type.STRING } },
-          timeline: { type: Type.ARRAY, items: { type: Type.STRING } },
-          budget: { type: Type.ARRAY, items: { type: Type.STRING } },
-          ethics: { type: Type.ARRAY, items: { type: Type.STRING } },
-          access: { type: Type.ARRAY, items: { type: Type.STRING } }
-        }
-      }
+      responseSchema: generateBlockSchema(blockKeys)
     }
   });
-  
+
   try {
     return JSON.parse(response.text);
-  } catch (err) {
-    throw new Error("AI extraction failed.");
+  } catch (e) {
+    console.error("Refine parse failed", e);
+    return {};
   }
 };
 
@@ -251,60 +223,44 @@ export const generateAbstract = async (blocks: any, projectName: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: `Generate abstract for "${projectName}". Contribution = deliverables. Canvas: ${JSON.stringify(blocks)}`,
+    contents: `Generate abstract for "${projectName}". Canvas: ${JSON.stringify(blocks)}`,
   });
   return response.text;
 };
 
 export const generateGrantOutline = async (blocks: any, projectName: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const prompt = `Generate a comprehensive Grant Proposal Outline for "${projectName}" using the following Research Compass data: ${JSON.stringify(blocks)}.
+  
+  The outline MUST follow this exact structure:
+
+  1. Statement of Need/Problem Statement:
+     - Clearly define the problem or gap your project addresses.
+     - Provide evidence and data to show the problem's extent.
+
+  2. Goals & Objectives:
+     - Goals: Broad, long-term aims (e.g., improve literacy).
+     - Objectives: Specific, measurable, achievable, relevant, and time-bound (SMART) steps to reach goals (e.g., increase reading scores by 10% in 12 months).
+
+  3. Project Design & Methods/Work Plan:
+     - Detail the specific activities, strategies, and steps you'll take.
+     - Explain how you'll achieve your objectives.
+     - Mention who will be involved (staff, volunteers, partners).
+
+  4. Expected Outcomes & Impact:
+     - What tangible results will your project produce? (e.g., number of people served, skills gained).
+     - How will this solve the stated need?
+
+  5. Evaluation Plan:
+     - How will you measure success (process & outcome evaluation)?
+     - What metrics and methods will you use to track progress and impact?
+
+  Ensure the output is well-formatted, professional, and directly utilizes the specific details from the provided Research Compass data.`;
+
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: `Generate outline for "${projectName}". Contribution = deliverables. Canvas: ${JSON.stringify(blocks)}`,
+    contents: prompt,
   });
   return response.text;
-};
-
-export const refineCanvas = async (blocks: any) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
-    acc[key] = val.items.map((i: any) => i.text);
-    return acc;
-  }, {});
-
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Refine this data. Contribution = deliverables. Data: ${JSON.stringify(simplifiedBlocks)}`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          problem_context: { type: Type.ARRAY, items: { type: Type.STRING } },
-          prior_work: { type: Type.ARRAY, items: { type: Type.STRING } },
-          gaps_limits: { type: Type.ARRAY, items: { type: Type.STRING } },
-          current_solutions: { type: Type.ARRAY, items: { type: Type.STRING } },
-          questions_hypotheses: { type: Type.ARRAY, items: { type: Type.STRING } },
-          aims_objectives: { type: Type.ARRAY, items: { type: Type.STRING } },
-          novelty: { type: Type.ARRAY, items: { type: Type.STRING } },
-          contribution: { type: Type.ARRAY, items: { type: Type.STRING } },
-          stakeholders: { type: Type.ARRAY, items: { type: Type.STRING } },
-          impact: { type: Type.ARRAY, items: { type: Type.STRING } },
-          methodology: { type: Type.ARRAY, items: { type: Type.STRING } },
-          data: { type: Type.ARRAY, items: { type: Type.STRING } },
-          resources: { type: Type.ARRAY, items: { type: Type.STRING } },
-          evidence_criteria: { type: Type.ARRAY, items: { type: Type.STRING } },
-          milestones: { type: Type.ARRAY, items: { type: Type.STRING } },
-          decision_points: { type: Type.ARRAY, items: { type: Type.STRING } },
-          risks: { type: Type.ARRAY, items: { type: Type.STRING } },
-          contingencies: { type: Type.ARRAY, items: { type: Type.STRING } },
-          timeline: { type: Type.ARRAY, items: { type: Type.STRING } },
-          budget: { type: Type.ARRAY, items: { type: Type.STRING } },
-          ethics: { type: Type.ARRAY, items: { type: Type.STRING } },
-          access: { type: Type.ARRAY, items: { type: Type.STRING } }
-        }
-      }
-    }
-  });
-  return JSON.parse(response.text);
 };
