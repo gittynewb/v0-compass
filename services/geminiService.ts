@@ -177,26 +177,28 @@ export const processWizardInput = async (question: string, answer: string) => {
 export const processDocumentImport = async (data: string, mimeType: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Robust base64 extraction from DataURL
   let base64Data = data;
   if (data.includes('base64,')) {
     base64Data = data.split('base64,')[1];
   }
 
-  const systemPrompt = `You are a World-Class Research Systems Analyst. Analyze the attached document (it could be a PDF, Word doc, or text file) and systematically extract core research components to populate a Strategic Research Canvas.
+  const systemPrompt = `You are an Expert Research Analyst. 
+Your objective is to perform a FAST, EXHAUSTIVE, and CONSISTENT extraction of research components from the provided document into a structured Discovery Canvas.
 
-CRITICAL REQUIREMENTS:
-1. MULTIMODAL EXTRACTION: If this is a PDF or binary file, use your advanced vision/document-parsing capabilities to read all text, tables, and section headers. 
-2. MAPPING LOGIC:
-   - 'gaps_limits': Look for unresolved questions, technical bottlenecks, or "Future Work" sections.
-   - 'questions_hypotheses': Identify central claims, research questions, or predictive statements.
-   - 'evidence_criteria': Find mention of success metrics, p-values, benchmarks, or validation protocols.
-   - 'methodology': Extract the specific technical procedures, controls, and study design.
-   - 'impact': Look for societal, technical, or economic benefits.
-3. OUTPUT FORMAT: Return ONLY a valid JSON object.
-4. QUALITY: Use professional, high-level scientific terminology. Consolidate redundant information.
+OPERATIONAL RULES:
+1. THOROUGH SCAN: Capture every nuanced claim, methodological detail, and deliverables.
+2. RIGID CATEGORIZATION: Map findings with high precision.
+3. CONTRIBUTION DEFINITION: The 'contribution' category refers to KEY DELIVERABLES, SCIENTIFIC ADVANCES, and TANGIBLE OUTCOMES reported in the text. DO NOT extract author names or contribution roles (e.g., "John wrote the paper") into this category.
+4. MAPPING DICTIONARY:
+   - problem_context: The broad setting.
+   - gaps_limits: Specific bottlenecks.
+   - novelty: What is new or unique.
+   - methodology: Technical procedures.
+   - evidence_criteria: Success metrics.
+   - contribution: Deliverables, advances, and outcomes (NOT author roles).
+5. NO HALLUCINATION: Only extract what is present in the source.
 
-DOCUMENT CONTEXT: ${mimeType.includes('pdf') ? 'PDF Document' : mimeType.includes('word') ? 'Word Document' : 'Plain Text Document'}`;
+DOCUMENT TYPE: ${mimeType}`;
 
   const parts: any[] = [{ text: systemPrompt }];
 
@@ -207,27 +209,24 @@ DOCUMENT CONTEXT: ${mimeType.includes('pdf') ? 'PDF Document' : mimeType.include
   ];
 
   if (binaryMimeTypes.includes(mimeType)) {
-    // Note: If Word documents fail with their specific MIME types, 
-    // we use application/pdf for PDFs and let the model handle Word headers 
-    // if we pass application/octet-stream or the specific Word mime.
     parts.push({
       inlineData: {
         data: base64Data,
-        mimeType: binaryMimeTypes.includes(mimeType) && !mimeType.includes('pdf') 
-          ? 'application/pdf' // Hack: Gemini often handles docx better if treated as a generic searchable document, but let's try the correct one first. Actually, PDF is highly stable.
-          : mimeType 
+        mimeType: 'application/pdf'
       }
     });
   } else {
-    parts.push({ text: `DOCUMENT CONTENT:\n"""\n${data}\n"""` });
+    parts.push({ text: `RAW DOCUMENT DATA:\n\n${data}` });
   }
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: "gemini-3-flash-preview", // Use Flash for high speed
     contents: { parts },
     config: {
-      thinkingConfig: { thinkingBudget: 8000 }, // Increased budget for complex document parsing
+      thinkingConfig: { thinkingBudget: 16384 }, // High reasoning budget for thoroughness
+      temperature: 0.1,
       responseMimeType: "application/json",
+      seed: 42,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -261,24 +260,50 @@ DOCUMENT CONTEXT: ${mimeType.includes('pdf') ? 'PDF Document' : mimeType.include
   try {
     return JSON.parse(response.text);
   } catch (err) {
-    throw new Error("AI returned an invalid format. This often happens if the document is too long or extremely dense.");
+    console.error("Failed to parse AI response:", response.text);
+    throw new Error("AI extraction failed to produce valid structured data.");
   }
 };
 
-export const generateGrantDraft = async (blocks: any, projectName: string) => {
+export const generateAbstract = async (blocks: any, projectName: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: `Using the provided Discovery Canvas data for the project "${projectName}", generate an NSF-style Project Summary (Executive Summary). 
+    contents: `Based on the provided Discovery Canvas data for "${projectName}", generate a high-impact Scientific Abstract.
     
-    The document must adhere to NSF standards and be structured into three explicit sections:
-    1. Overview: A description of the project, including goals and activities.
-    2. Intellectual Merit: The potential of the proposed activity to advance knowledge.
-    3. Broader Impacts: The potential of the proposed activity to benefit society and contribute to the achievement of specific, desired societal outcomes.
+    The abstract should cover:
+    - The problem and its significance.
+    - The specific gap in knowledge.
+    - The core hypothesis/solution.
+    - High-level methodology.
+    - Expected deliverables and contribution to the field.
     
     Canvas Content: ${JSON.stringify(blocks)}
     
-    Ensure the tone is formal, academic, and highly persuasive. Use professional scientific terminology appropriate for a grant reviewer.`,
+    Tone: Professional and academic.`,
+  });
+  return response.text;
+};
+
+export const generateGrantOutline = async (blocks: any, projectName: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: "gemini-3-pro-preview",
+    contents: `Using the provided Discovery Canvas data for "${projectName}", generate a detailed Grant Outline.
+    
+    The document MUST follow this structure:
+    
+    1. PROJECT DESCRIPTION
+       - Introduction/Objectives: What you're doing and why.
+       - Rationale/Scope: Scientific justification, preliminary data, and predictions.
+       - Research Plan/Methods: Detailed "how-to," including experimental design.
+    2. INTELLECTUAL MERIT: Significance of the work and its potential to advance knowledge.
+    3. BROADER IMPACTS: Societal benefits, education, outreach, and diversity goals.
+    4. EVALUATION/SUCCESS: Definitive success metrics and benchmarks.
+    
+    Canvas Content: ${JSON.stringify(blocks)}
+    
+    Tone: Formal and technical.`,
   });
   return response.text;
 };
@@ -292,8 +317,8 @@ export const refineCanvas = async (blocks: any) => {
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Evaluate the following research canvas data. For each block, consolidate similar or redundant points, improve wording for technical accuracy and clarity, and ensure a professional tone. 
-    CRITICAL: Never change the original meaning, implication, or intent of the user's input. 
+    contents: `Evaluate the following research canvas data. Consolidate similar points, improve technical wording, and ensure a professional tone. 
+    Never change the original meaning or intent. 
     
     Data: ${JSON.stringify(simplifiedBlocks)}
     

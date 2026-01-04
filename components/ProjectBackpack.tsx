@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ProjectState } from '../types';
+import { ProjectState, CanvasBlock } from '../types';
 import { storageService } from '../services/storageService';
 
 interface BackpackProps {
@@ -67,7 +67,8 @@ export const ProjectBackpack: React.FC<BackpackProps> = ({ onSelect, currentProj
               </button>
             </div>
             <div className="mt-3 flex gap-1">
-              {Object.values(p.blocks).slice(0, 5).map((b, i) => (
+              {/* Fix: Cast Object.values to CanvasBlock[] to resolve type error where 'b' is inferred as 'unknown' */}
+              {(Object.values(p.blocks) as CanvasBlock[]).slice(0, 5).map((b, i) => (
                 <div key={i} className={`h-1 flex-1 rounded-full ${b.items.length > 0 ? 'bg-indigo-400' : 'bg-slate-600 opacity-30'}`} />
               ))}
             </div>
