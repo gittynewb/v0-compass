@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { ProjectState, BlockId, CanvasItem, Thread, CanvasBlock as ICanvasBlock, User } from './types';
 import { INITIAL_BLOCKS } from './constants';
 import { CanvasBlock } from './components/CanvasBlock';
@@ -520,6 +521,7 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      <Analytics />
     </div>
   );
 };
