@@ -154,11 +154,14 @@ const App: React.FC = () => {
       setWarnings(results);
       if (results.length === 0) {
         setProcessingStatus("No issues found. Project is sound.");
-        setTimeout(() => setProcessingStatus(""), 2000);
+      } else {
+        setProcessingStatus(`${results.length} logical gaps identified.`);
       }
+      setTimeout(() => setProcessingStatus(""), 3000);
     } catch (e) { 
       console.error(e); 
       setProcessingStatus("Audit failed.");
+      setTimeout(() => setProcessingStatus(""), 2000);
     } finally { 
       setIsChecking(false); 
     }
@@ -228,7 +231,7 @@ const App: React.FC = () => {
     reader.onload = async (event) => {
       const result = event.target?.result as string;
       try {
-        setProcessingStatus("Gemini 3 Pro is mapping your document to the canvas structure...");
+        setProcessingStatus("Gemini 3 Pro is mapping your document...");
         const extractedData = await processDocumentImport(result, file.type);
         setProject(prev => {
           const newBlocks = { ...prev.blocks };
@@ -411,8 +414,37 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-3 overflow-y-auto bg-slate-200 scrollbar-hide">
+        <main className="flex-1 p-3 overflow-y-auto bg-slate-200 scrollbar-hide relative">
           <div className="max-w-[1800px] mx-auto space-y-3 pb-8">
+            {/* Logical Warnings Alert */}
+            {warnings.length > 0 && (
+              <div className="bg-amber-100 border-2 border-amber-300 rounded-xl p-3 shadow-md animate-in slide-in-from-top duration-300">
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                    <span className="text-sm font-bold text-amber-900 uppercase tracking-tight">Logical Audit Results</span>
+                  </div>
+                  <button onClick={() => setWarnings([])} className="text-amber-500 hover:text-amber-700">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {warnings.map((w, idx) => (
+                    <div key={idx} className="bg-white/60 p-2.5 rounded-lg flex justify-between items-center gap-4">
+                      <p className="text-xs text-amber-900 font-medium leading-relaxed">{w}</p>
+                      <button 
+                        onClick={() => handleFixGap(w)} 
+                        disabled={!!fixingWarning}
+                        className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded-md text-[10px] font-bold shadow-sm transition-all shrink-0 active:scale-95 disabled:opacity-50"
+                      >
+                        {fixingWarning === w ? "FIXING..." : "AUTO-FIX"}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-5 gap-3">
               <div className="col-span-2 border-2 border-indigo-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
                 <div className="bg-indigo-600 px-3 py-1 flex items-center justify-between shrink-0">

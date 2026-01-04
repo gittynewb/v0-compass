@@ -50,20 +50,32 @@ export const checkFalsifiability = async (hypothesis: string) => {
 
 export const runOrphanCheck = async (blocks: any) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const prompt = `Review this research canvas structure for logical gaps. Look for:
-  - Risks without contingency plans
-  - Study designs that don't test stated hypotheses
-  - Gaps without corresponding research questions
-  - Missing resource requirements for complex methodologies
   
-  Content: ${JSON.stringify(blocks)}
+  const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
+    acc[key] = val.items.map((i: any) => i.text);
+    return acc;
+  }, {});
+
+  const prompt = `Perform a high-speed logical audit on this research canvas. Identify exactly 3 critical structural gaps.
   
-  Return a list of warnings (max 3) in a JSON array of strings. Each warning should be a clear description of a single logical issue.`;
+  MAPPING DEFINITION: 
+  - contribution: Key deliverables and scientific advances reported. NOT author roles.
+  
+  AUDIT RULES:
+  - Identify Risks missing corresponding Contingencies.
+  - Identify Hypotheses without Methodology steps.
+  - Identify Gaps without Research Questions.
+  - Identify high-level aims without success criteria (evidence_criteria).
+  
+  Content: ${JSON.stringify(simplifiedBlocks)}
+  
+  Return a JSON array of strings (max 3). Be technical and specific.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: prompt,
     config: {
+      // Removed thinking budget for absolute maximum speed on this diagnostic task
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.ARRAY,
@@ -81,17 +93,14 @@ export const fixLogicalGap = async (blocks: any, warning: string) => {
     return acc;
   }, {});
 
-  const prompt = `The following research project has a logical gap detected by the validation engine: "${warning}".
+  const prompt = `The following research project has a logical gap: "${warning}".
   
   Current Project Canvas: ${JSON.stringify(simplifiedBlocks)}
   
   TASK: Resolve this specific logical gap by modifying the relevant canvas blocks. 
-  - If a risk is orphaned, add a contingency.
-  - If a method is unsupported, add the required resources or data.
-  - If a hypothesis is not being tested, add a relevant methodological step.
   
   Return a JSON object with the block IDs as keys, where each value is an array of strings representing the NEW, complete set of items for that block. 
-  Only include keys for blocks that require changes. Keep changes minimal and focused solely on resolving the warning.`;
+  Only include keys for blocks that require changes.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
@@ -134,12 +143,11 @@ export const processWizardInput = async (question: string, answer: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Based on the user's answer to the specific research question: "${question}", extract and format the core information. 
-    User Answer: "${answer}"
+    contents: `Based on the user's answer: "${answer}" to question: "${question}", map the information.
     
-    Map the extracted information to the most relevant categories among the Discovery Canvas blocks.
+    'contribution' category MUST refer to KEY DELIVERABLES/ADVANCES.
     
-    Return a JSON object where keys are the relevant block IDs and values are concise, bullet-point ready strings summarizing the information for that block.`,
+    Return a JSON object with relevant block IDs.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
@@ -182,48 +190,23 @@ export const processDocumentImport = async (data: string, mimeType: string) => {
     base64Data = data.split('base64,')[1];
   }
 
-  const systemPrompt = `You are an Expert Research Analyst. 
-Your objective is to perform a FAST, EXHAUSTIVE, and CONSISTENT extraction of research components from the provided document into a structured Discovery Canvas.
-
-OPERATIONAL RULES:
-1. THOROUGH SCAN: Capture every nuanced claim, methodological detail, and deliverables.
-2. RIGID CATEGORIZATION: Map findings with high precision.
-3. CONTRIBUTION DEFINITION: The 'contribution' category refers to KEY DELIVERABLES, SCIENTIFIC ADVANCES, and TANGIBLE OUTCOMES reported in the text. DO NOT extract author names or contribution roles (e.g., "John wrote the paper") into this category.
-4. MAPPING DICTIONARY:
-   - problem_context: The broad setting.
-   - gaps_limits: Specific bottlenecks.
-   - novelty: What is new or unique.
-   - methodology: Technical procedures.
-   - evidence_criteria: Success metrics.
-   - contribution: Deliverables, advances, and outcomes (NOT author roles).
-5. NO HALLUCINATION: Only extract what is present in the source.
-
-DOCUMENT TYPE: ${mimeType}`;
+  const systemPrompt = `You are an Expert Research Analyst. Extract research components fast.
+  Contribution category refers ONLY to KEY DELIVERABLES and ADVANCES. No author names.`;
 
   const parts: any[] = [{ text: systemPrompt }];
-
-  const binaryMimeTypes = [
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/msword'
-  ];
+  const binaryMimeTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
 
   if (binaryMimeTypes.includes(mimeType)) {
-    parts.push({
-      inlineData: {
-        data: base64Data,
-        mimeType: 'application/pdf'
-      }
-    });
+    parts.push({ inlineData: { data: base64Data, mimeType: 'application/pdf' } });
   } else {
     parts.push({ text: `RAW DOCUMENT DATA:\n\n${data}` });
   }
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview", // Use Flash for high speed
+    model: "gemini-3-flash-preview",
     contents: { parts },
     config: {
-      thinkingConfig: { thinkingBudget: 16384 }, // High reasoning budget for thoroughness
+      thinkingConfig: { thinkingBudget: 8192 }, 
       temperature: 0.1,
       responseMimeType: "application/json",
       seed: 42,
@@ -260,8 +243,7 @@ DOCUMENT TYPE: ${mimeType}`;
   try {
     return JSON.parse(response.text);
   } catch (err) {
-    console.error("Failed to parse AI response:", response.text);
-    throw new Error("AI extraction failed to produce valid structured data.");
+    throw new Error("AI extraction failed.");
   }
 };
 
@@ -269,18 +251,7 @@ export const generateAbstract = async (blocks: any, projectName: string) => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: `Based on the provided Discovery Canvas data for "${projectName}", generate a high-impact Scientific Abstract.
-    
-    The abstract should cover:
-    - The problem and its significance.
-    - The specific gap in knowledge.
-    - The core hypothesis/solution.
-    - High-level methodology.
-    - Expected deliverables and contribution to the field.
-    
-    Canvas Content: ${JSON.stringify(blocks)}
-    
-    Tone: Professional and academic.`,
+    contents: `Generate abstract for "${projectName}". Contribution = deliverables. Canvas: ${JSON.stringify(blocks)}`,
   });
   return response.text;
 };
@@ -289,21 +260,7 @@ export const generateGrantOutline = async (blocks: any, projectName: string) => 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
-    contents: `Using the provided Discovery Canvas data for "${projectName}", generate a detailed Grant Outline.
-    
-    The document MUST follow this structure:
-    
-    1. PROJECT DESCRIPTION
-       - Introduction/Objectives: What you're doing and why.
-       - Rationale/Scope: Scientific justification, preliminary data, and predictions.
-       - Research Plan/Methods: Detailed "how-to," including experimental design.
-    2. INTELLECTUAL MERIT: Significance of the work and its potential to advance knowledge.
-    3. BROADER IMPACTS: Societal benefits, education, outreach, and diversity goals.
-    4. EVALUATION/SUCCESS: Definitive success metrics and benchmarks.
-    
-    Canvas Content: ${JSON.stringify(blocks)}
-    
-    Tone: Formal and technical.`,
+    contents: `Generate outline for "${projectName}". Contribution = deliverables. Canvas: ${JSON.stringify(blocks)}`,
   });
   return response.text;
 };
@@ -317,12 +274,7 @@ export const refineCanvas = async (blocks: any) => {
 
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
-    contents: `Evaluate the following research canvas data. Consolidate similar points, improve technical wording, and ensure a professional tone. 
-    Never change the original meaning or intent. 
-    
-    Data: ${JSON.stringify(simplifiedBlocks)}
-    
-    Return a JSON object with the same keys, where each value is an array of refined strings.`,
+    contents: `Refine this data. Contribution = deliverables. Data: ${JSON.stringify(simplifiedBlocks)}`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
