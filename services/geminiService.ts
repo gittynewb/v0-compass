@@ -144,13 +144,14 @@ export const processDocumentImport = async (data: string, mimeType: string, onUp
   const processGroup = async (group: {name: string, blocks: string[]}) => {
     if (onUpdate) onUpdate(`Analyzing ${group.name}...`);
     
-    const prompt = `You are a research analyst. From the provided PDF, extract technical details for these specific blocks: ${group.blocks.join(', ')}.
+    const prompt = `You are a PhD-level research analyst. From the provided PDF, extract technical details for these specific blocks: ${group.blocks.join(', ')}.
     
     DEFINITIONS:
     - contribution: Deliverables/advances.
     - questions_hypotheses: Falsifiable predictions.
     - evidence_criteria: Success metrics/benchmarks.
     - novelty: Technical differentiators.
+    - Steakholders: Potential users, customers, or organizations that will gain a technical, economic, or societal advantage from the project.
     
     Return ONLY JSON. Ensure maximum coverage for these specific blocks.`;
 
