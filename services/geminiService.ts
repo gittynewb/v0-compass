@@ -79,6 +79,38 @@ export const runOrphanCheck = async (blocks: any) => {
   - Identify Hypotheses without Methodology steps.
   - Identify Gaps without Research Questions.
   - Identify high-level aims without success criteria (evidence_criteria).
+
+THE "WHY" CHAIN (Defining the Niche)
+1.	Problem Context + Prior Work connect to Gaps & Limits
+You must define the landscape to prove a hole exists.
+2.	Gaps & Limits + Current Solutions connect to Novelty
+This is the triangulation you noted. Novelty is the intersection of "what is missing" (Gaps) and "why existing attempts failed" (Current Solutions).
+THE "WHAT" CHAIN (The Research Spine)
+3. Gaps & Limits connect to Questions & Hypotheses
+The specific missing knowledge directly prompts the research question.
+4.	Questions & Hypotheses connect to Aims & Objectives
+This is the tight operational coupling.
+•	Hypothesis: The prediction.
+•	Aim: The specific action taken to test that prediction.
+5.	Aims & Objectives connect to Evidence Criteria
+If the Aim is the action, the Evidence Criteria is the proof that the action was successful.
+THE "HOW" CHAIN (Execution)
+6. Aims & Objectives connect to Methodology
+The method must be selected specifically to achieve the stated Aim.
+7.	Methodology connects to Data & Resources
+The method dictates the raw materials (Data) and tools (Resources) required.
+8.	Constraints connect to Methodology
+Budget, ethics, and time limit which methods are viable.
+THE "SO WHAT" CHAIN (Value)
+9. Contribution connects to Impact & Stakeholders
+The specific academic output (Contribution) determines who cares (Stakeholders) and the downstream effect (Impact).
+THE REALITY CHECK (Feasibility)
+10. Risks connect to Contingencies
+Every risk requires a specific backup plan.
+11.	Decision Points connect to Methodology
+Critical junctions where data analysis might force a change in the Method.
+
+
   
   Content: ${JSON.stringify(simplifiedBlocks)}
   
