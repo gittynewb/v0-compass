@@ -234,31 +234,49 @@ export const generateGrantOutline = async (blocks: any, projectName: string) => 
   
   const prompt = `Generate a comprehensive Grant Proposal Outline for "${projectName}" using the following Research Compass data: ${JSON.stringify(blocks)}.
   
-  The outline MUST follow this exact structure:
+  Key Features of a Good NSF Proposal Project Description
+Clarity and Significance
 
-  1. Statement of Need/Problem Statement:
-     - Clearly define the problem or gap your project addresses.
-     - Provide evidence and data to show the problem's extent.
+Opens with a compelling problem statement that establishes why this research matters now
+Clearly articulates intellectual merit and broader impacts throughout (not just in separate sections)
+Connects to the specific program's priorities and review criteria
 
-  2. Goals & Objectives:
-     - Goals: Broad, long-term aims (e.g., improve literacy).
-     - Objectives: Specific, measurable, achievable, relevant, and time-bound (SMART) steps to reach goals (e.g., increase reading scores by 10% in 12 months).
+Strong Scientific Foundation
 
-  3. Project Design & Methods/Work Plan:
-     - Detail the specific activities, strategies, and steps you'll take.
-     - Explain how you'll achieve your objectives.
-     - Mention who will be involved (staff, volunteers, partners).
+Demonstrates deep knowledge of the field and positions work within current literature
+Identifies genuine gaps—not just "no one has done X" but why X matters
+Presents preliminary data that de-risks the proposal and shows feasibility
 
-  4. Expected Outcomes & Impact:
-     - What tangible results will your project produce? (e.g., number of people served, skills gained).
-     - How will this solve the stated need?
+Well-Structured Approach
 
-  5. Evaluation Plan:
-     - How will you measure success (process & outcome evaluation)?
-     - What metrics and methods will you use to track progress and impact?
+Specific, testable hypotheses or clear research questions
+Logical flow from aims to methods to expected outcomes
+Realistic timeline with milestones
+Anticipates challenges and describes alternative approaches
+
+Rigor and Reproducibility
+
+Addresses statistical considerations, controls, and validation strategies
+Describes how data will be managed and shared
+
+Integration of Broader Impacts
+
+Goes beyond boilerplate—shows genuine integration with the research
+Specific, measurable activities with clear outcomes
+
+
+Typical Headings:
+
+- Introduction / Project Overview
+- Background and Rationale
+- Preliminary Studies / Results
+- Research Plan (or Objectives and Approach)
+  Aim 1, Aim 2, Aim 3 (as subsections)
+- Expected Outcomes and Significance
+- Timeline
+- Broader Impacts
 
   Ensure the output is well-formatted, professional, and directly utilizes the specific details from the provided Research Compass data.`;
-
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
     contents: prompt,
