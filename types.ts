@@ -1,10 +1,10 @@
 
 export type BlockId = 
   | 'problem_context' | 'prior_work' | 'gaps_limits' | 'current_solutions'
-  | 'questions_hypotheses' | 'aims_objectives' | 'novelty' | 'contribution'
+  | 'questions_hypotheses' | 'aims_objectives' | 'novelty'
   | 'stakeholders' | 'impact'
   | 'methodology' | 'data' | 'resources'
-  | 'evidence_criteria' | 'milestones' | 'decision_points' | 'risks' | 'contingencies'
+  | 'evidence_criteria' | 'milestones' | 'risks' | 'contingencies'
   | 'timeline' | 'budget' | 'ethics' | 'access';
 
 export type SpaceId = 

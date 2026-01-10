@@ -1,6 +1,5 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Analytics } from '@vercel/analytics/react';
 import { ProjectState, BlockId, CanvasItem, Thread, CanvasBlock as ICanvasBlock, User } from './types';
 import { INITIAL_BLOCKS } from './constants';
 import { CanvasBlock } from './components/CanvasBlock';
@@ -291,11 +290,11 @@ const App: React.FC = () => {
     // Detailed Slides
     const categories: Record<string, BlockId[]> = {
       'PROBLEM SPACE': ['problem_context', 'prior_work', 'gaps_limits', 'current_solutions'],
-      'CLAIM SPACE': ['questions_hypotheses', 'novelty', 'contribution', 'aims_objectives'],
+      'CLAIM SPACE': ['questions_hypotheses', 'aims_objectives', 'novelty'],
       'VALUE SPACE': ['stakeholders', 'impact'],
       'EXECUTION SPACE': ['methodology', 'data', 'resources'],
       'VALIDATION': ['evidence_criteria'],
-      'RISK & STRATEGY': ['milestones', 'decision_points', 'risks', 'contingencies'],
+      'RISK & STRATEGY': ['milestones', 'risks', 'contingencies'],
       'CONSTRAINTS': ['timeline', 'budget', 'ethics', 'access']
     };
 
@@ -407,16 +406,14 @@ const App: React.FC = () => {
               <div className="col-span-3 border-2 border-emerald-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
                 <div className="bg-emerald-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Claim Space</div>
                 <div className="grid grid-cols-3 gap-2 p-2 flex-1 min-h-[300px]">
-                  {renderBlock('questions_hypotheses')}{renderBlock('novelty')}{renderBlock('contribution')}
+                  {renderBlock('questions_hypotheses')}
+                  {renderBlock('aims_objectives')}
+                  {renderBlock('novelty')}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-6 gap-3">
-              <div className="col-span-1 border-2 border-emerald-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-emerald-50/20">
-                <div className="bg-emerald-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Focus</div>
-                <div className="p-2 flex-1 min-h-[260px]">{renderBlock('aims_objectives')}</div>
-              </div>
+            <div className="grid grid-cols-5 gap-3">
               <div className="col-span-2 border-2 border-orange-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
                 <div className="bg-orange-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Value Space</div>
                 <div className="grid grid-cols-2 gap-2 p-2 flex-1 min-h-[260px]">{renderBlock('stakeholders')}{renderBlock('impact')}</div>
@@ -434,7 +431,7 @@ const App: React.FC = () => {
               </div>
               <div className="col-span-5 border-2 border-amber-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
                 <div className="bg-amber-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Risk & Strategy</div>
-                <div className="grid grid-cols-4 gap-2 p-2 flex-1 min-h-[240px]">{renderBlock('milestones')}{renderBlock('decision_points')}{renderBlock('risks')}{renderBlock('contingencies')}</div>
+                <div className="grid grid-cols-3 gap-2 p-2 flex-1 min-h-[240px]">{renderBlock('milestones')}{renderBlock('risks')}{renderBlock('contingencies')}</div>
               </div>
             </div>
 
@@ -521,7 +518,6 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      <Analytics />
     </div>
   );
 };

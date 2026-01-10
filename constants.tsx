@@ -1,3 +1,4 @@
+
 import { WizardQuestion, BlockId, CanvasBlock } from './types';
 
 export const WIZARD_QUESTIONS: WizardQuestion[] = [
@@ -60,7 +61,7 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
   },
   { 
     id: 6, 
-    question: "What is the intellectual merit of your approach? What fundamentally differentiates it from prior work?", 
+    question: "What is new or unique about your approach? What fundamentally differentiates it from prior work?", 
     targetBlocks: ['novelty'], 
     description: "Define your unique technical angle or 'Secret Sauce'.",
     hints: [
@@ -128,17 +129,6 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
   },
   // VALUE SPACE
   { 
-    id: 12, 
-    question: "What unique value or fundamental knowledge will this success contribute to the broader scientific community?", 
-    targetBlocks: ['contribution'], 
-    description: "The 'So What?'. How does the needle move for other researchers?",
-    hints: [
-      "Efficiency gains or cost reductions for the field.",
-      "New fundamental understanding of a natural or artificial law.",
-      "Opening a new avenue for subsequent research projects."
-    ]
-  },
-  { 
     id: 13, 
     question: "Who are the direct beneficiaries—stakeholders, industries, or communities of practice?", 
     targetBlocks: ['stakeholders'], 
@@ -174,7 +164,7 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
   },
   { 
     id: 16, 
-    question: "What are your strategic redundancies and 'Plan B' contingencies for the hazards identified?", 
+    question: "What are the strategic redundancies and 'Plan B' contingencies for the hazards identified?", 
     targetBlocks: ['contingencies'], 
     description: "The safety net and mitigation strategies.",
     hints: [
@@ -192,17 +182,6 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
       "Phase 1 complete: Data acquisition and cleanup.",
       "Phase 2 complete: Initial prototype/model verification.",
       "Phase 3: Final analysis and manuscript submission."
-    ]
-  },
-  { 
-    id: 18, 
-    question: "At what points will you evaluate results to decide whether to pivot, accelerate, or cease the project?", 
-    targetBlocks: ['decision_points'], 
-    description: "Operational governance and active 'Kill Switch' management.",
-    hints: [
-      "Go/No-go criteria based on month 6 results.",
-      "Budget-triggered review cycles.",
-      "Competitive landscape evaluation points."
     ]
   },
   // CONSTRAINTS
@@ -227,11 +206,10 @@ export const INITIAL_BLOCKS: Record<BlockId, CanvasBlock> = {
   
   questions_hypotheses: { id: 'questions_hypotheses', title: 'Questions & Hypotheses', description: 'Q: What are you asking? H: What do you predict?', category: 'CLAIM', items: [] },
   aims_objectives: { id: 'aims_objectives', title: 'Aims & Objectives', description: 'Measurable project goals.', category: 'CLAIM', items: [] },
-  novelty: { id: 'novelty', title: 'Novelty', description: 'What is NEW in your approach?', category: 'CLAIM', items: [] },
-  contribution: { id: 'contribution', title: 'Contribution', description: 'What VALUE does this add?', category: 'CLAIM', items: [] },
+  novelty: { id: 'novelty', title: 'New Approach, Insight, Innovation', description: 'What is NEW in your approach?', category: 'CLAIM', items: [] },
   
-  stakeholders: { id: 'stakeholders', title: 'Stakeholders', description: 'Who cares? Target audience.', category: 'VALUE', items: [] },
-  impact: { id: 'impact', title: 'Impact', description: 'If successful, what changes?', category: 'VALUE', items: [] },
+  stakeholders: { id: 'stakeholders', title: 'Target Audience', description: 'Who cares? Who will benefit?', category: 'VALUE', items: [] },
+  impact: { id: 'impact', title: 'Significance & Impact', description: 'What VALUE does this add?', category: 'VALUE', items: [] },
   
   methodology: { id: 'methodology', title: 'Methodology', description: 'Key Methods, strategy, experiments, controls.', category: 'EXECUTION', items: [] },
   data: { id: 'data', title: 'Data', description: 'Sources. ✓have / Xneed', category: 'EXECUTION', items: [] },
@@ -240,7 +218,6 @@ export const INITIAL_BLOCKS: Record<BlockId, CanvasBlock> = {
   evidence_criteria: { id: 'evidence_criteria', title: 'Evidence Criteria', description: 'What proves/disproves each claim?', category: 'VALIDATION', items: [] },
   
   milestones: { id: 'milestones', title: 'Milestones', description: 'Timeline checkpoints.', category: 'RISK', items: [] },
-  decision_points: { id: 'decision_points', title: 'Decision Points', description: 'Go/no-go criteria.', category: 'RISK', items: [] },
   risks: { id: 'risks', title: 'Risks', description: 'What could fail?', category: 'RISK', items: [] },
   contingencies: { id: 'contingencies', title: 'Contingencies', description: 'Backup plans.', category: 'RISK', items: [] },
   
