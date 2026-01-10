@@ -71,15 +71,13 @@ export const runOrphanCheck = async (blocks: any) => {
 
   const prompt = `Perform a high-speed logical audit on this research canvas. Identify exactly 3 critical structural gaps.
   
-  MAPPING DEFINITION: 
-  - contribution: Key deliverables and scientific advances reported. NOT author roles.
-  
   AUDIT RULES:
   - Identify Risks missing corresponding Contingencies.
   - Identify Hypotheses without Methodology steps.
   - Identify Gaps without Research Questions.
   - Identify high-level aims without success criteria (evidence_criteria).
-
+  
+Logic chain:
 THE "WHY" CHAIN (Defining the Niche)
 1.	Problem Context + Prior Work connect to Gaps & Limits
 You must define the landscape to prove a hole exists.
@@ -102,16 +100,12 @@ The method dictates the raw materials (Data) and tools (Resources) required.
 8.	Constraints connect to Methodology
 Budget, ethics, and time limit which methods are viable.
 THE "SO WHAT" CHAIN (Value)
-9. Contribution connects to Impact & Stakeholders
-The specific academic output (Contribution) determines who cares (Stakeholders) and the downstream effect (Impact).
+9. Novelty connects to Impact & Stakeholders
+The specific academic output determines who cares (Stakeholders) and the downstream effect (Impact).
 THE REALITY CHECK (Feasibility)
 10. Risks connect to Contingencies
 Every risk requires a specific backup plan.
-11.	Decision Points connect to Methodology
-Critical junctions where data analysis might force a change in the Method.
 
-
-  
   Content: ${JSON.stringify(simplifiedBlocks)}
   
   Return a JSON array of strings (max 3). Be technical and specific.`;
@@ -161,11 +155,11 @@ export const processDocumentImport = async (data: string, mimeType: string, onUp
   const groups = [
     {
       name: "Background & Core Claims",
-      blocks: ['problem_context', 'prior_work', 'gaps_limits', 'questions_hypotheses', 'novelty', 'contribution']
+      blocks: ['problem_context', 'prior_work', 'gaps_limits', 'questions_hypotheses', 'aims_objectives', 'novelty']
     },
     {
       name: "Execution & Logistics",
-      blocks: ['aims_objectives', 'methodology', 'data', 'resources', 'milestones', 'decision_points']
+      blocks: ['methodology', 'data', 'resources', 'milestones']
     },
     {
       name: "Value, Strategy & Constraints",
@@ -179,11 +173,10 @@ export const processDocumentImport = async (data: string, mimeType: string, onUp
     const prompt = `You are a PhD-level research analyst. From the provided PDF, extract technical details for these specific blocks: ${group.blocks.join(', ')}.
     
     DEFINITIONS:
-    - contribution: Deliverables/advances.
     - questions_hypotheses: Falsifiable predictions.
     - evidence_criteria: Success metrics/benchmarks.
     - novelty: Technical differentiators.
-    - Steakholders: Potential users, customers, or organizations that will gain a technical, economic, or societal advantage from the project.
+    - stakeholders: Potential users, customers, or organizations that will gain a technical, economic, or societal advantage from the project.
     
     Return ONLY JSON. Ensure maximum coverage for these specific blocks.`;
 
@@ -228,7 +221,6 @@ export const refineCanvas = async (blocks: any) => {
   1. Improve technical wording and framing for clarity and academic professionalism.
   2. Consolidate similar or redundant bullet points within the same block into single, comprehensive statements.
   3. CRITICAL RULE: NEVER change the fundamental intent, meaning, or specific data points of the user's original input.
-  4. Ensure 'contribution' blocks describe key scientific deliverables or advances.
 
   Return a JSON object mapping the provided block IDs to their NEW arrays of refined strings.
   
@@ -309,6 +301,7 @@ Typical Headings:
 - Broader Impacts
 
   Ensure the output is well-formatted, professional, and directly utilizes the specific details from the provided Research Compass data.`;
+
   const response = await ai.models.generateContent({
     model: "gemini-3-pro-preview",
     contents: prompt,
