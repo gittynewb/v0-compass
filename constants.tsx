@@ -5,24 +5,13 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
   // PROBLEM SPACE
   { 
     id: 1, 
-    question: "What is the current scientific, technical, or societal landscape? Why is this area critical now?", 
+    question: "What is the status quo? Describe the current landscape, existing solutions, and how things are done today.", 
     targetBlocks: ['problem_context'], 
-    description: "Establish the 'macro' view and contemporary relevance of this field.",
+    description: "Establish the 'macro' view, prior work, and current standard of practice.",
     hints: [
       "Societal pressures or emerging global trends.",
-      "Technological maturity or theoretical readiness in the field.",
+      "Existing prototypes, pilot study outcomes, or 'Gold Standard' assays.",
       "Urgency: Why is a solution needed now vs. 10 years ago?"
-    ]
-  },
-  { 
-    id: 2, 
-    question: "What foundational knowledge—empirical findings, theoretical proofs, or engineering standards—does this project build upon?", 
-    targetBlocks: ['prior_work'], 
-    description: "Identify the established baseline or state-of-the-art foundation.",
-    hints: [
-      "Seminal papers, patents, or industry standards.",
-      "Previous experimental results or mathematical lemmas.",
-      "Existing prototypes or pilot study outcomes."
     ]
   },
   { 
@@ -34,17 +23,6 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
       "Technical: Computational complexity, signal-to-noise ratio, or material fatigue.",
       "Theoretical: Inconsistencies in models or lack of formal proofs.",
       "Empirical: Biological pathways unknown or data resolution limits."
-    ]
-  },
-  { 
-    id: 4, 
-    question: "How is this problem currently managed? What are the standard benchmarks or 'status quo' approaches?", 
-    targetBlocks: ['current_solutions'], 
-    description: "Describe existing solutions and their inherent limitations.",
-    hints: [
-      "Ad-hoc methods, brute force, or expensive legacy systems.",
-      "Current 'Gold Standard' assays or algorithms.",
-      "Why do these fail to address the gap identified in the previous step?"
     ]
   },
   // CLAIM SPACE
@@ -60,17 +38,6 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
     ]
   },
   { 
-    id: 6, 
-    question: "What is new or unique about your approach? What fundamentally differentiates it from prior work?", 
-    targetBlocks: ['novelty'], 
-    description: "Define your unique technical angle or 'Secret Sauce'.",
-    hints: [
-      "Cross-disciplinary synthesis (e.g., applying Physics methods to Biology).",
-      "New order of magnitude in precision, scale, or speed.",
-      "A shift in theoretical paradigm or a new synthesis of existing data."
-    ]
-  },
-  { 
     id: 7, 
     question: "What are your specific technical objectives? What concrete milestones define success for this claim?", 
     targetBlocks: ['aims_objectives'], 
@@ -79,6 +46,17 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
       "Synthesis/Construction: 'To develop a prototype capable of [X]...'",
       "Optimization: 'To increase throughput by [Y]%...'",
       "Characterization: 'To map the interaction between [A] and [B]...'"
+    ]
+  },
+  { 
+    id: 6, 
+    question: "What is new or unique about your approach? What fundamentally differentiates it from the status quo?", 
+    targetBlocks: ['novelty'], 
+    description: "Define your unique technical angle or 'Secret Sauce'.",
+    hints: [
+      "Cross-disciplinary synthesis (e.g., applying Physics methods to Biology).",
+      "New order of magnitude in precision, scale, or speed.",
+      "A shift in theoretical paradigm or a new synthesis of existing data."
     ]
   },
   // EXECUTION SPACE
@@ -95,24 +73,13 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
   },
   { 
     id: 9, 
-    question: "What data or physical materials are required? What do you already possess vs. what must be acquired?", 
-    targetBlocks: ['data'], 
-    description: "Inventory of your information assets and raw inputs.",
+    question: "What data, physical materials, or infrastructure do you need? What do you already possess vs. what must be acquired?", 
+    targetBlocks: ['resources'], 
+    description: "Inventory of your information assets, raw inputs, and compute needs.",
     hints: [
       "Instrument readouts, synthetic datasets, or archival records.",
       "Reagents, transgenic models, or specific material alloys.",
-      "Open-source libraries vs. proprietary data streams."
-    ]
-  },
-  { 
-    id: 10, 
-    question: "What specialized operational infrastructure or collaborations are essential for success?", 
-    targetBlocks: ['resources'], 
-    description: "The physical and human fuel for your research.",
-    hints: [
-      "HPC clusters, cleanroom access, or specific lab equipment (e.g., NMR, Cryo-EM).",
-      "Subject matter experts (SMEs) or external industry partners.",
-      "Specialized technicians or software engineering support."
+      "HPC clusters, cleanroom access, or specific lab equipment."
     ]
   },
   // VALIDATION
@@ -152,28 +119,6 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
   },
   // RISK & STRATEGY
   { 
-    id: 15, 
-    question: "What are the most probable technical hazards or external risks that could compromise the project?", 
-    targetBlocks: ['risks'], 
-    description: "Honest assessment of failure modes and danger zones.",
-    hints: [
-      "Instrument downtime or material shortages.",
-      "Data sparsity, bias, or loss of signal.",
-      "Key personnel departure or shifting regulatory requirements."
-    ]
-  },
-  { 
-    id: 16, 
-    question: "What are the strategic redundancies and 'Plan B' contingencies for the hazards identified?", 
-    targetBlocks: ['contingencies'], 
-    description: "The safety net and mitigation strategies.",
-    hints: [
-      "Alternative data sources or surrogate model systems.",
-      "Backup lab facilities or distributed compute resources.",
-      "Reduced scope 'minimum viable research' pathways."
-    ]
-  },
-  { 
     id: 17, 
     question: "What are the critical temporal checkpoints or milestones for this project?", 
     targetBlocks: ['milestones'], 
@@ -184,11 +129,22 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
       "Phase 3: Final analysis and manuscript submission."
     ]
   },
+  { 
+    id: 15, 
+    question: "What are the most probable hazards, and what are your Plan B contingencies?", 
+    targetBlocks: ['risks'], 
+    description: "Failure modes and mitigation strategies.",
+    hints: [
+      "Instrument downtime, data sparsity, or material shortages.",
+      "Alternative data sources or surrogate model systems.",
+      "Reduced scope 'minimum viable research' pathways."
+    ]
+  },
   // CONSTRAINTS
   { 
     id: 19, 
     question: "What are the hard parameters regarding project timeline, funding caps, and ethical/IRB requirements?", 
-    targetBlocks: ['timeline', 'budget', 'ethics', 'access'], 
+    targetBlocks: ['timeline', 'budget', 'ethics'], 
     description: "The fixed boundaries of the research project.",
     hints: [
       "Grant duration (e.g., 24 months) and total cost limits.",
@@ -199,30 +155,25 @@ export const WIZARD_QUESTIONS: WizardQuestion[] = [
 ];
 
 export const INITIAL_BLOCKS: Record<BlockId, CanvasBlock> = {
-  problem_context: { id: 'problem_context', title: 'Problem Context', description: 'Broader setting or situation.', category: 'PROBLEM', items: [] },
-  prior_work: { id: 'prior_work', title: 'Prior Work', description: 'What exists? Key references.', category: 'PROBLEM', items: [] },
-  gaps_limits: { id: 'gaps_limits', title: 'Gaps & Limits', description: "What's missing or broken?", category: 'PROBLEM', items: [] },
-  current_solutions: { id: 'current_solutions', title: 'Current Solutions', description: "How is it done today?", category: 'PROBLEM', items: [] },
+  problem_context: { id: 'problem_context', title: 'STATUS QUO', description: 'Broader setting. What exists? How is it done today?', category: 'PROBLEM', items: [] },
+  gaps_limits: { id: 'gaps_limits', title: 'GAPS & LIMITS', description: "What's missing or broken? Why is the status quo insufficient?", category: 'PROBLEM', items: [] },
   
-  questions_hypotheses: { id: 'questions_hypotheses', title: 'Questions & Hypotheses', description: 'Q: What are you asking? H: What do you predict?', category: 'CLAIM', items: [] },
-  aims_objectives: { id: 'aims_objectives', title: 'Aims & Objectives', description: 'Measurable project goals.', category: 'CLAIM', items: [] },
-  novelty: { id: 'novelty', title: 'New Approach, Insight, Innovation', description: 'What is NEW in your approach?', category: 'CLAIM', items: [] },
+  questions_hypotheses: { id: 'questions_hypotheses', title: 'QUESTIONS & HYPOTHESES', description: 'What do you hope to learn? What do you predict?', category: 'CLAIM', items: [] },
+  aims_objectives: { id: 'aims_objectives', title: 'AIMS & OBJECTIVES', description: 'Measurable project goals.', category: 'CLAIM', items: [] },
+  novelty: { id: 'novelty', title: 'NEW APPROACH, INSIGHT, INNOVATION', description: 'What is NEW in your approach?', category: 'CLAIM', items: [] },
   
-  stakeholders: { id: 'stakeholders', title: 'Target Audience', description: 'Who cares? Who will benefit?', category: 'VALUE', items: [] },
-  impact: { id: 'impact', title: 'Significance & Impact', description: 'What VALUE does this add?', category: 'VALUE', items: [] },
+  stakeholders: { id: 'stakeholders', title: 'TARGET AUDIENCE', description: 'Who cares? Who will benefit?', category: 'VALUE', items: [] },
+  impact: { id: 'impact', title: 'SIGNIFICANCE & IMPACT', description: 'What VALUE does this add?', category: 'VALUE', items: [] },
   
-  methodology: { id: 'methodology', title: 'Methodology', description: 'Key Methods, strategy, experiments, controls.', category: 'EXECUTION', items: [] },
-  data: { id: 'data', title: 'Data', description: 'Sources. ✓have / Xneed', category: 'EXECUTION', items: [] },
-  resources: { id: 'resources', title: 'Resources', description: 'Compute, skills, collaborators.', category: 'EXECUTION', items: [] },
+  methodology: { id: 'methodology', title: 'METHODOLOGY', description: 'Key Methods, strategy, experiments, controls.', category: 'EXECUTION', items: [] },
+  resources: { id: 'resources', title: 'RESOURCES NEEDED', description: 'What do you need? Data sources, compute, tools, skills.', category: 'EXECUTION', items: [] },
   
-  evidence_criteria: { id: 'evidence_criteria', title: 'Evidence Criteria', description: 'What proves/disproves each claim?', category: 'VALIDATION', items: [] },
+  evidence_criteria: { id: 'evidence_criteria', title: 'EVIDENCE CRITERIA', description: 'How will you prove / disprove each claim?', category: 'VALIDATION', items: [] },
   
-  milestones: { id: 'milestones', title: 'Milestones', description: 'Timeline checkpoints.', category: 'RISK', items: [] },
-  risks: { id: 'risks', title: 'Risks', description: 'What could fail?', category: 'RISK', items: [] },
-  contingencies: { id: 'contingencies', title: 'Contingencies', description: 'Backup plans.', category: 'RISK', items: [] },
+  milestones: { id: 'milestones', title: 'MILESTONES', description: 'Timeline & checkpoints.', category: 'RISK', items: [] },
+  risks: { id: 'risks', title: 'RISKS & CONTINGENCIES', description: 'What could fail? Backup plans. Kill criteria.', category: 'RISK', items: [] },
   
-  timeline: { id: 'timeline', title: 'Timeline', description: 'Deadlines...', category: 'CONSTRAINTS', items: [] },
-  budget: { id: 'budget', title: 'Budget', description: 'Funding limits...', category: 'CONSTRAINTS', items: [] },
-  ethics: { id: 'ethics', title: 'Ethics/IRB', description: 'Approvals needed...', category: 'CONSTRAINTS', items: [] },
-  access: { id: 'access', title: 'Access', description: 'Restricted resources...', category: 'CONSTRAINTS', items: [] },
+  timeline: { id: 'timeline', title: 'TIMELINE', description: 'Deadlines...', category: 'CONSTRAINTS', items: [] },
+  budget: { id: 'budget', title: 'BUDGET', description: 'Funding needs / limits...', category: 'CONSTRAINTS', items: [] },
+  ethics: { id: 'ethics', title: 'ETHICS / IRB', description: 'Approvals needed...', category: 'CONSTRAINTS', items: [] },
 };

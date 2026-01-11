@@ -1,11 +1,11 @@
 
 export type BlockId = 
-  | 'problem_context' | 'prior_work' | 'gaps_limits' | 'current_solutions'
+  | 'problem_context' | 'gaps_limits'
   | 'questions_hypotheses' | 'aims_objectives' | 'novelty'
   | 'stakeholders' | 'impact'
-  | 'methodology' | 'data' | 'resources'
-  | 'evidence_criteria' | 'milestones' | 'risks' | 'contingencies'
-  | 'timeline' | 'budget' | 'ethics' | 'access';
+  | 'methodology' | 'resources'
+  | 'evidence_criteria' | 'milestones' | 'risks'
+  | 'timeline' | 'budget' | 'ethics';
 
 export type SpaceId = 
   | 'PROBLEM' | 'CLAIM' | 'VALUE' | 'EXECUTION' | 'VALIDATION' | 'RISK' | 'CONSTRAINTS';

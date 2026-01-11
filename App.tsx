@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ProjectState, BlockId, CanvasItem, Thread, CanvasBlock as ICanvasBlock, User } from './types';
 import { INITIAL_BLOCKS } from './constants';
@@ -70,11 +69,16 @@ const App: React.FC = () => {
 
   const handleReset = () => {
     if (window.confirm("Clear all compass contents?")) {
-      setProject(prev => {
-        const resetBlocks = { ...prev.blocks };
-        (Object.keys(resetBlocks) as BlockId[]).forEach(id => { resetBlocks[id].items = []; });
-        return { ...prev, blocks: resetBlocks, threads: [], updatedAt: Date.now() };
-      });
+      // Force a deep copy of the initial state to ensure a completely clean slate
+      // We do not use the previous state's block structure to avoid carrying over corrupt data
+      const freshBlocks = JSON.parse(JSON.stringify(INITIAL_BLOCKS));
+      
+      setProject(prev => ({
+        ...prev,
+        blocks: freshBlocks,
+        threads: [],
+        updatedAt: Date.now()
+      }));
     }
   };
 
@@ -287,47 +291,24 @@ const App: React.FC = () => {
       });
     });
 
-    // Detailed Slides
-    const categories: Record<string, BlockId[]> = {
-      'PROBLEM SPACE': ['problem_context', 'prior_work', 'gaps_limits', 'current_solutions'],
-      'CLAIM SPACE': ['questions_hypotheses', 'aims_objectives', 'novelty'],
-      'VALUE SPACE': ['stakeholders', 'impact'],
-      'EXECUTION SPACE': ['methodology', 'data', 'resources'],
-      'VALIDATION': ['evidence_criteria'],
-      'RISK & STRATEGY': ['milestones', 'risks', 'contingencies'],
-      'CONSTRAINTS': ['timeline', 'budget', 'ethics', 'access']
-    };
-
-    Object.entries(categories).forEach(([catName, ids]) => {
-      const slide = pres.addSlide();
-      slide.addText(catName, { x: 0.5, y: 0.3, w: '90%', h: 0.5, fontSize: 24, bold: true, color: '4F46E5' });
-      let currentY = 1.0;
-      ids.forEach(bid => {
-        const block = project.blocks[bid];
-        if (block.items.length > 0) {
-          slide.addText(block.title, { x: 0.5, y: currentY, w: '90%', h: 0.3, fontSize: 14, bold: true, color: '1E293B' });
-          currentY += 0.3;
-          const itemsText = block.items.map(i => `• ${i.text}`).join('\n');
-          slide.addText(itemsText, { x: 0.7, y: currentY, w: '85%', h: 1.0, fontSize: 11, color: '475569', align: 'left', valign: 'top' });
-          currentY += 1.2;
-        }
-      });
-    });
-
     pres.writeFile({ fileName: `${project.name.replace(/\s+/g, '_')}_Compass.pptx` });
   };
 
-  const renderBlock = (id: BlockId) => (
-    <CanvasBlock 
-      key={id} block={project.blocks[id]} 
-      onAddItem={handleAddItem} onUpdateItemText={(bid, iid, text) => handleUpdateItem(bid, iid, { text })} 
-      onDeleteItem={handleDeleteItem} onUpdateItem={handleUpdateItem}
-      activeView="Full"
-      linkingState={linkingState}
-      onStartLink={startLinking}
-      onEndLink={endLinking}
-    />
-  );
+  const renderBlock = (id: BlockId) => {
+    // Check if block exists to prevent crash on old data
+    if (!project.blocks[id]) return null;
+    return (
+      <CanvasBlock 
+        key={id} block={project.blocks[id]} 
+        onAddItem={handleAddItem} onUpdateItemText={(bid, iid, text) => handleUpdateItem(bid, iid, { text })} 
+        onDeleteItem={handleDeleteItem} onUpdateItem={handleUpdateItem}
+        activeView="Full"
+        linkingState={linkingState}
+        onStartLink={startLinking}
+        onEndLink={endLinking}
+      />
+    );
+  };
 
   if (!user) {
     return <LandingPage onLogin={handleLogin} />;
@@ -377,7 +358,7 @@ const App: React.FC = () => {
         <main className="flex-1 p-3 overflow-y-auto bg-slate-200 scrollbar-hide relative z-10">
           {showThreads && <LogicThreads threads={project.threads} containerRef={containerRef} />}
           
-          <div className="max-w-[1800px] mx-auto space-y-3 pb-8 relative">
+          <div className="max-w-[1900px] mx-auto space-y-3 pb-8 relative">
             {warnings.length > 0 && (
               <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 shadow-md animate-in slide-in-from-top duration-300 relative z-20">
                 <div className="flex justify-between items-center mb-2">
@@ -395,52 +376,71 @@ const App: React.FC = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-5 gap-3">
-              <div className="col-span-2 border-2 border-indigo-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
+            {/* TOP ROW: PROBLEM | CLAIM | VALUE */}
+            <div className="grid grid-cols-12 gap-3 min-h-[480px]">
+              {/* Problem Space - 20% */}
+              <div className="col-span-3 border-2 border-indigo-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
                 <div className="bg-indigo-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Problem Space</div>
-                <div className="grid grid-cols-2 gap-2 p-2 flex-1 min-h-[300px]">
-                   <div className="flex flex-col gap-2">{renderBlock('problem_context')}{renderBlock('prior_work')}</div>
-                   <div className="flex flex-col gap-2">{renderBlock('gaps_limits')}{renderBlock('current_solutions')}</div>
+                <div className="flex flex-col gap-2 p-2 flex-1">
+                   <div className="flex-[2] flex flex-col">{renderBlock('problem_context')}</div>
+                   <div className="flex-1 flex flex-col">{renderBlock('gaps_limits')}</div>
                 </div>
               </div>
-              <div className="col-span-3 border-2 border-emerald-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
+              
+              {/* Claim Space - 50% (3 Columns) */}
+              <div className="col-span-6 border-2 border-emerald-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
                 <div className="bg-emerald-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Claim Space</div>
-                <div className="grid grid-cols-3 gap-2 p-2 flex-1 min-h-[300px]">
+                <div className="grid grid-cols-3 gap-2 p-2 flex-1">
                   {renderBlock('questions_hypotheses')}
                   {renderBlock('aims_objectives')}
                   {renderBlock('novelty')}
                 </div>
               </div>
+
+              {/* Value Space - 20% */}
+              <div className="col-span-3 border-2 border-orange-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
+                <div className="bg-orange-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Value Space</div>
+                <div className="flex flex-col gap-2 p-2 flex-1">
+                  <div className="flex-1 flex flex-col">{renderBlock('stakeholders')}</div>
+                  <div className="flex-1 flex flex-col">{renderBlock('impact')}</div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-5 gap-3">
-              <div className="col-span-2 border-2 border-orange-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
-                <div className="bg-orange-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Value Space</div>
-                <div className="grid grid-cols-2 gap-2 p-2 flex-1 min-h-[260px]">{renderBlock('stakeholders')}{renderBlock('impact')}</div>
-              </div>
+            {/* MIDDLE ROW: EXECUTION | STRATEGY | VALIDATION */}
+            <div className="grid grid-cols-12 gap-3 min-h-[380px]">
+              {/* Execution Space - 25% */}
               <div className="col-span-3 border-2 border-violet-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
                 <div className="bg-violet-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Execution Space</div>
-                <div className="grid grid-cols-3 gap-2 p-2 flex-1 min-h-[260px]">{renderBlock('methodology')}{renderBlock('data')}{renderBlock('resources')}</div>
+                <div className="flex flex-col gap-2 p-2 flex-1">
+                   <div className="flex-[2] flex flex-col">{renderBlock('methodology')}</div>
+                   <div className="flex-1 flex flex-col">{renderBlock('resources')}</div>
+                </div>
+              </div>
+
+              {/* Strategy & Risk Space - 50% */}
+              <div className="col-span-6 border-2 border-amber-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
+                <div className="bg-amber-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Strategy & Risk Space</div>
+                <div className="grid grid-cols-2 gap-2 p-2 flex-1">
+                  {renderBlock('milestones')}
+                  {renderBlock('risks')}
+                </div>
+              </div>
+
+              {/* Validation Space - 25% */}
+              <div className="col-span-3 border-2 border-sky-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
+                <div className="bg-sky-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Validation Space</div>
+                <div className="p-2 flex-1 flex flex-col">{renderBlock('evidence_criteria')}</div>
               </div>
             </div>
 
-            <div className="grid grid-cols-6 gap-3">
-              <div className="col-span-1 border-2 border-sky-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
-                <div className="bg-sky-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Validation</div>
-                <div className="p-2 flex-1 min-h-[240px]">{renderBlock('evidence_criteria')}</div>
-              </div>
-              <div className="col-span-5 border-2 border-amber-300 rounded-xl overflow-hidden shadow-sm flex flex-col bg-white">
-                <div className="bg-amber-600 px-3 py-1 text-[10px] font-black uppercase text-white tracking-tight">Risk & Strategy</div>
-                <div className="grid grid-cols-3 gap-2 p-2 flex-1 min-h-[240px]">{renderBlock('milestones')}{renderBlock('risks')}{renderBlock('contingencies')}</div>
-              </div>
-            </div>
-
-            <div className="border-2 border-zinc-300 rounded-xl overflow-hidden shadow-sm bg-white flex h-48 shrink-0">
+            {/* BOTTOM ROW: CONSTRAINTS */}
+            <div className="border-2 border-zinc-300 rounded-xl overflow-hidden shadow-sm bg-white flex h-40 shrink-0">
               <div className="bg-zinc-800 text-white flex flex-col items-center justify-center px-2 w-12 shrink-0">
                 <span className="font-black uppercase text-[10px] tracking-widest -rotate-90 whitespace-nowrap">Constraints</span>
               </div>
-              <div className="flex-1 grid grid-cols-4 gap-px bg-slate-100">
-                {renderBlock('timeline')}{renderBlock('budget')}{renderBlock('ethics')}{renderBlock('access')}
+              <div className="flex-1 grid grid-cols-3 gap-px bg-slate-100">
+                {renderBlock('timeline')}{renderBlock('budget')}{renderBlock('ethics')}
               </div>
             </div>
           </div>
