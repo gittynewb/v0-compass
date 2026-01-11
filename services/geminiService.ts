@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
 // Helper to define block schema subsets for modular processing
@@ -72,17 +71,17 @@ export const runOrphanCheck = async (blocks: any) => {
   const prompt = `Perform a high-speed logical audit on this research canvas. Identify exactly 3 critical structural gaps.
   
   AUDIT RULES:
-  - Identify Risks missing corresponding Contingencies.
+  - Identify Risks missing corresponding mitigation strategies.
   - Identify Hypotheses without Methodology steps.
   - Identify Gaps without Research Questions.
   - Identify high-level aims without success criteria (evidence_criteria).
   
 Logic chain:
 THE "WHY" CHAIN (Defining the Niche)
-1.	Problem Context + Prior Work connect to Gaps & Limits
+1.	Status Quo (problem_context) connects to Gaps & Limits
 You must define the landscape to prove a hole exists.
-2.	Gaps & Limits + Current Solutions connect to Novelty
-This is the triangulation you noted. Novelty is the intersection of "what is missing" (Gaps) and "why existing attempts failed" (Current Solutions).
+2.	Gaps & Limits connect to Novelty
+Novelty is the intersection of "what is missing" (Gaps) and "why existing attempts failed" (Status Quo).
 THE "WHAT" CHAIN (The Research Spine)
 3. Gaps & Limits connect to Questions & Hypotheses
 The specific missing knowledge directly prompts the research question.
@@ -95,16 +94,16 @@ If the Aim is the action, the Evidence Criteria is the proof that the action was
 THE "HOW" CHAIN (Execution)
 6. Aims & Objectives connect to Methodology
 The method must be selected specifically to achieve the stated Aim.
-7.	Methodology connects to Data & Resources
-The method dictates the raw materials (Data) and tools (Resources) required.
+7.	Methodology connects to Resources
+The method dictates the raw materials (Resources) required.
 8.	Constraints connect to Methodology
 Budget, ethics, and time limit which methods are viable.
 THE "SO WHAT" CHAIN (Value)
 9. Novelty connects to Impact & Stakeholders
 The specific academic output determines who cares (Stakeholders) and the downstream effect (Impact).
 THE REALITY CHECK (Feasibility)
-10. Risks connect to Contingencies
-Every risk requires a specific backup plan.
+10. Risks connect to Resources
+Risks often require extra resources or backup plans.
 
   Content: ${JSON.stringify(simplifiedBlocks)}
   
@@ -155,15 +154,15 @@ export const processDocumentImport = async (data: string, mimeType: string, onUp
   const groups = [
     {
       name: "Background & Core Claims",
-      blocks: ['problem_context', 'prior_work', 'gaps_limits', 'questions_hypotheses', 'aims_objectives', 'novelty']
+      blocks: ['problem_context', 'gaps_limits', 'questions_hypotheses', 'aims_objectives', 'novelty']
     },
     {
       name: "Execution & Logistics",
-      blocks: ['methodology', 'data', 'resources', 'milestones']
+      blocks: ['methodology', 'resources', 'milestones']
     },
     {
       name: "Value, Strategy & Constraints",
-      blocks: ['stakeholders', 'impact', 'evidence_criteria', 'risks', 'contingencies', 'timeline', 'budget', 'ethics', 'access']
+      blocks: ['stakeholders', 'impact', 'evidence_criteria', 'risks', 'timeline', 'budget', 'ethics']
     }
   ];
 
@@ -173,10 +172,12 @@ export const processDocumentImport = async (data: string, mimeType: string, onUp
     const prompt = `You are a PhD-level research analyst. From the provided PDF, extract technical details for these specific blocks: ${group.blocks.join(', ')}.
     
     DEFINITIONS:
+    - problem_context: The Status Quo. Current landscape and how things are done today.
+    - resources: What is needed? Data, compute, equipment.
     - questions_hypotheses: Falsifiable predictions.
     - evidence_criteria: Success metrics/benchmarks.
     - novelty: Technical differentiators.
-    - stakeholders: Potential users, customers, or organizations that will gain a technical, economic, or societal advantage from the project.
+    - stakeholders: Potential users, customers, or organizations that will gain a technical, economic, or societal advantage from the project. Do NOT include funding bodies (e.g., NSF, NIH, DoD) as stakeholders. Stakeholders are BENEFICIARIES of the research, not the patrons paying for it.
     
     Return ONLY JSON. Ensure maximum coverage for these specific blocks.`;
 
