@@ -2,310 +2,324 @@ import { GoogleGenAI, Type } from "@google/genai";
 
 // Helper to define block schema subsets for modular processing
 const generateBlockSchema = (keys: string[]) => {
-  const properties: any = {};
-  keys.forEach(key => {
-    properties[key] = { type: Type.ARRAY, items: { type: Type.STRING } };
-  });
-  return {
-    type: Type.OBJECT,
-    properties,
-    required: keys
-  };
+    const properties: any = {};
+    keys.forEach(key => {
+          properties[key] = { type: Type.ARRAY, items: { type: Type.STRING } };
+    });
+    return {
+          type: Type.OBJECT,
+          properties,
+          required: keys
+    };
 };
 
 export const detectJargon = async (text: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Analyze the following research statement for jargon and buzzwords. Identify them and suggest simpler alternatives. Return the result in a JSON array of objects with 'term' and 'alternative'.
-    
-    Statement: "${text}"`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            term: { type: Type.STRING },
-            alternative: { type: Type.STRING }
-          },
-          required: ["term", "alternative"]
-        }
-      }
-    }
-  });
-  return JSON.parse(response.text);
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: `Analyze the following research statement for jargon and buzzwords. Identify them and suggest simpler alternatives. Return the result in a JSON array of objects with 'term' and 'alternative'.
+
+          Statement: "${text}"`,
+          config: {
+                  responseMimeType: "application/json",
+                  responseSchema: {
+                            type: Type.ARRAY,
+                            items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                                      term: { type: Type.STRING },
+                                                      alternative: { type: Type.STRING }
+                                        },
+                                        required: ["term", "alternative"]
+                            }
+                  }
+          }
+    });
+    return JSON.parse(response.text);
 };
 
 export const checkFalsifiability = async (hypothesis: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Evaluate the following hypothesis for falsifiability. If it is vague, suggest a version with a measurable metric. Return a JSON object with 'isFalsifiable' (boolean) and 'suggestion' (string).
-    
-    Hypothesis: "${hypothesis}"`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          isFalsifiable: { type: Type.BOOLEAN },
-          suggestion: { type: Type.STRING }
-        },
-        required: ["isFalsifiable", "suggestion"]
-      }
-    }
-  });
-  return JSON.parse(response.text);
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: `Evaluate the following hypothesis for falsifiability. If it is vague, suggest a version with a measurable metric. Return a JSON object with 'isFalsifiable' (boolean) and 'suggestion' (string).
+
+          Hypothesis: "${hypothesis}"`,
+          config: {
+                  responseMimeType: "application/json",
+                  responseSchema: {
+                            type: Type.OBJECT,
+                            properties: {
+                                        isFalsifiable: { type: Type.BOOLEAN },
+                                        suggestion: { type: Type.STRING }
+                            },
+                            required: ["isFalsifiable", "suggestion"]
+                  }
+          }
+    });
+    return JSON.parse(response.text);
 };
 
 export const runOrphanCheck = async (blocks: any) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
-    acc[key] = val.items.map((i: any) => i.text);
-    return acc;
-  }, {});
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  const prompt = `Perform a high-speed logical audit on this research canvas. Identify exactly 3 critical structural gaps.
-  
-  AUDIT RULES:
-  - Identify Risks missing corresponding mitigation strategies.
-  - Identify Hypotheses without Methodology steps.
-  - Identify Gaps without Research Questions.
-  - Identify high-level aims without success criteria (evidence_criteria).
-  
-Logic chain:
-THE "WHY" CHAIN (Defining the Niche)
-1.	Status Quo (problem_context) connects to Gaps & Limits
-You must define the landscape to prove a hole exists.
-2.	Gaps & Limits connect to Novelty
-Novelty is the intersection of "what is missing" (Gaps) and "why existing attempts failed" (Status Quo).
-THE "WHAT" CHAIN (The Research Spine)
-3. Gaps & Limits connect to Questions & Hypotheses
-The specific missing knowledge directly prompts the research question.
-4.	Questions & Hypotheses connect to Aims & Objectives
-This is the tight operational coupling.
-•	Hypothesis: The prediction.
-•	Aim: The specific action taken to test that prediction.
-5.	Aims & Objectives connect to Evidence Criteria
-If the Aim is the action, the Evidence Criteria is the proof that the action was successful.
-THE "HOW" CHAIN (Execution)
-6. Aims & Objectives connect to Methodology
-The method must be selected specifically to achieve the stated Aim.
-7.	Methodology connects to Resources
-The method dictates the raw materials (Resources) required.
-8.	Constraints connect to Methodology
-Budget, ethics, and time limit which methods are viable.
-THE "SO WHAT" CHAIN (Value)
-9. Novelty connects to Impact & Stakeholders
-The specific academic output determines who cares (Stakeholders) and the downstream effect (Impact).
-THE REALITY CHECK (Feasibility)
-10. Risks connect to Resources
-Risks often require extra resources or backup plans.
+    const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
+          acc[key] = val.items.map((i: any) => i.text);
+          return acc;
+    }, {});
 
-  Content: ${JSON.stringify(simplifiedBlocks)}
-  
-  Return a JSON array of strings (max 3). Be technical and specific.`;
+    const prompt = `Perform a high-speed logical audit on this research canvas. Identify exactly 3 critical structural gaps.
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: { type: Type.STRING }
-      }
-    }
-  });
-  return JSON.parse(response.text);
+    AUDIT RULES:
+    - Identify Risks missing corresponding mitigation strategies.
+    - Identify Hypotheses without Methodology steps.
+    - Identify Gaps without Research Questions.
+    - Identify high-level aims without success criteria (evidence_criteria).
+
+    Logic chain:
+    THE "WHY" CHAIN (Defining the Niche)
+    1. Status Quo (problem_context) connects to Gaps & Limits
+    You must define the landscape to prove a hole exists.
+    2. Gaps & Limits connect to Novelty
+    Novelty is the intersection of "what is missing" (Gaps) and "why existing attempts failed" (Status Quo).
+    THE "WHAT" CHAIN (The Research Spine)
+    3. Gaps & Limits connect to Questions & Hypotheses
+    The specific missing knowledge directly prompts the research question.
+    4. Questions & Hypotheses connect to Aims & Objectives
+    This is the tight operational coupling.
+    • Hypothesis: The prediction.
+    • Aim: The specific action taken to test that prediction.
+    5. Aims & Objectives connect to Evidence Criteria
+    If the Aim is the action, the Evidence Criteria is the proof that the action was successful.
+    THE "HOW" CHAIN (Execution)
+    6. Aims & Objectives connect to Methodology
+    The method must be selected specifically to achieve the stated Aim.
+    7. Methodology connects to Resources
+    The method dictates the raw materials (Resources) required.
+    8. Constraints connect to Methodology
+    Budget, ethics, and time limit which methods are viable.
+    THE "SO WHAT" CHAIN (Value)
+    9. Novelty connects to Impact & Stakeholders
+    The specific academic output determines who cares (Stakeholders) and the downstream effect (Impact).
+    THE REALITY CHECK (Feasibility)
+    10. Risks connect to Resources
+    Risks often require extra resources or backup plans.
+
+    Content: ${JSON.stringify(simplifiedBlocks)}
+
+    Return a JSON array of strings (max 3). Be technical and specific.`;
+
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: prompt,
+          config: {
+                  responseMimeType: "application/json",
+                  responseSchema: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                  }
+          }
+    });
+    return JSON.parse(response.text);
 };
 
 export const fixLogicalGap = async (blocks: any, warning: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `The following research project has a logical gap: "${warning}". Resolve it.`,
-    config: { responseMimeType: "application/json" }
-  });
-  return JSON.parse(response.text);
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const blockKeys = Object.keys(blocks);
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: `The following research project has a logical gap: "${warning}". Resolve it by generating content for the relevant canvas blocks.`,
+          config: {
+                  responseMimeType: "application/json",
+                  responseSchema: generateBlockSchema(blockKeys)
+          }
+    });
+    return JSON.parse(response.text);
 };
 
-export const processWizardInput = async (question: string, answer: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Map answer: "${answer}" to question: "${question}".`,
-    config: { responseMimeType: "application/json" }
-  });
-  return JSON.parse(response.text);
+export const processWizardInput = async (question: string, answer: string, targetBlocks: string[]) => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+    const prompt = `You are a research planning assistant. The user was asked: "${question}"
+    Their answer: "${answer}"
+
+    Extract and map the key points from this answer into the following research canvas blocks: ${targetBlocks.join(', ')}.
+    Each block should receive an array of concise, specific bullet-point strings derived from the user's answer.
+    Keep each bullet to 1-2 sentences. Be precise and technical.`;
+
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: prompt,
+          config: {
+                  responseMimeType: "application/json",
+                  responseSchema: generateBlockSchema(targetBlocks)
+          }
+    });
+    return JSON.parse(response.text);
 };
 
 export const processDocumentImport = async (data: string, mimeType: string, onUpdate?: (stage: string) => void) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  let base64Data = data;
-  if (data.includes('base64,')) {
-    base64Data = data.split('base64,')[1];
-  }
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-  const groups = [
-    {
-      name: "Background & Core Claims",
-      blocks: ['problem_context', 'gaps_limits', 'questions_hypotheses', 'aims_objectives', 'novelty']
-    },
-    {
-      name: "Execution & Logistics",
-      blocks: ['methodology', 'resources', 'milestones']
-    },
-    {
-      name: "Value, Strategy & Constraints",
-      blocks: ['stakeholders', 'impact', 'evidence_criteria', 'risks', 'timeline', 'budget', 'ethics']
+    let base64Data = data;
+    if (data.includes('base64,')) {
+          base64Data = data.split('base64,')[1];
     }
-  ];
 
-  const processGroup = async (group: {name: string, blocks: string[]}) => {
-    if (onUpdate) onUpdate(`Analyzing ${group.name}...`);
-    
-    const prompt = `You are a PhD-level research analyst. From the provided PDF, extract technical details for these specific blocks: ${group.blocks.join(', ')}.
-    
-    DEFINITIONS:
-    - problem_context: The Status Quo. Current landscape and how things are done today.
-    - resources: What is needed? Data, compute, equipment.
-    - questions_hypotheses: Falsifiable predictions.
-    - evidence_criteria: Success metrics/benchmarks.
-    - novelty: Technical differentiators.
-    - stakeholders: Potential users, customers, or organizations that will gain a technical, economic, or societal advantage from the project. Do NOT include funding bodies (e.g., NSF, NIH, DoD) as stakeholders. Stakeholders are BENEFICIARIES of the research, not the patrons paying for it.
-    
-    Return ONLY JSON. Ensure maximum coverage for these specific blocks.`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [
-        { text: prompt },
-        { inlineData: { data: base64Data, mimeType: mimeType } }
-      ],
-      config: {
-        temperature: 0.1,
-        responseMimeType: "application/json",
-        responseSchema: generateBlockSchema(group.blocks)
+    const groups = [
+      {
+              name: "Background & Core Claims",
+              blocks: ['problem_context', 'gaps_limits', 'questions_hypotheses', 'aims_objectives', 'novelty']
+      },
+      {
+              name: "Execution & Logistics",
+              blocks: ['methodology', 'resources', 'milestones']
+      },
+      {
+              name: "Value, Strategy & Constraints",
+              blocks: ['stakeholders', 'impact', 'evidence_criteria', 'risks', 'timeline', 'budget', 'ethics']
       }
-    });
+        ];
 
-    try {
-      return JSON.parse(response.text);
-    } catch (e) {
-      console.error(`Failed to parse group: ${group.name}`, e);
-      return {};
-    }
-  };
+    const processGroup = async (group: {name: string, blocks: string[]}) => {
+          if (onUpdate) onUpdate(`Analyzing ${group.name}...`);
 
-  const results = await Promise.all(groups.map(g => processGroup(g)));
-  return results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+          const prompt = `You are a PhD-level research analyst. From the provided PDF, extract technical details for these specific blocks: ${group.blocks.join(', ')}.
+
+          DEFINITIONS:
+          - problem_context: The Status Quo. Current landscape and how things are done today.
+          - resources: What is needed? Data, compute, equipment.
+          - questions_hypotheses: Falsifiable predictions.
+          - evidence_criteria: Success metrics/benchmarks.
+          - novelty: Technical differentiators.
+          - stakeholders: Potential users, customers, or organizations that will gain a technical, economic, or societal advantage from the project. Do NOT include funding bodies (e.g., NSF, NIH, DoD) as stakeholders. Stakeholders are BENEFICIARIES of the research, not the patrons paying for it.
+
+          Return ONLY JSON. Ensure maximum coverage for these specific blocks.`;
+
+          const response = await ai.models.generateContent({
+                  model: "gemini-2.0-flash",
+                  contents: [
+                    { text: prompt },
+                    { inlineData: { data: base64Data, mimeType: mimeType } }
+                          ],
+                  config: {
+                            temperature: 0.1,
+                            responseMimeType: "application/json",
+                            responseSchema: generateBlockSchema(group.blocks)
+                  }
+          });
+
+          try {
+                  return JSON.parse(response.text);
+          } catch (e) {
+                  console.error(`Failed to parse group: ${group.name}`, e);
+                  return {};
+          }
+    };
+
+    const results = await Promise.all(groups.map(g => processGroup(g)));
+    return results.reduce((acc, curr) => ({ ...acc, ...curr }), {});
 };
 
 export const refineCanvas = async (blocks: any) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
-    const items = val.items.map((i: any) => i.text).filter((t: string) => t.trim().length > 0);
-    if (items.length > 0) acc[key] = items;
-    return acc;
-  }, {});
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const simplifiedBlocks = Object.entries(blocks).reduce((acc: any, [key, val]: [string, any]) => {
+          const items = val.items.map((i: any) => i.text).filter((t: string) => t.trim().length > 0);
+          if (items.length > 0) acc[key] = items;
+          return acc;
+    }, {});
 
-  const blockKeys = Object.keys(simplifiedBlocks);
-  if (blockKeys.length === 0) return {};
+    const blockKeys = Object.keys(simplifiedBlocks);
+    if (blockKeys.length === 0) return {};
 
-  const prompt = `As a professional scientific editor, refine the following research canvas data. 
-  TASK:
-  1. Improve technical wording and framing for clarity and academic professionalism.
-  2. Consolidate similar or redundant bullet points within the same block into single, comprehensive statements.
-  3. CRITICAL RULE: NEVER change the fundamental intent, meaning, or specific data points of the user's original input.
+    const prompt = `As a professional scientific editor, refine the following research canvas data.
+    TASK:
+    1. Improve technical wording and framing for clarity and academic professionalism.
+    2. Consolidate similar or redundant bullet points within the same block into single, comprehensive statements.
+    3. CRITICAL RULE: NEVER change the fundamental intent, meaning, or specific data points of the user's original input.
 
-  Return a JSON object mapping the provided block IDs to their NEW arrays of refined strings.
-  
-  DATA: ${JSON.stringify(simplifiedBlocks)}`;
+    Return a JSON object mapping the provided block IDs to their NEW arrays of refined strings.
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      temperature: 0.1,
-      responseMimeType: "application/json",
-      responseSchema: generateBlockSchema(blockKeys)
+    DATA: ${JSON.stringify(simplifiedBlocks)}`;
+
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: prompt,
+          config: {
+                  temperature: 0.1,
+                  responseMimeType: "application/json",
+                  responseSchema: generateBlockSchema(blockKeys)
+          }
+    });
+
+    try {
+          return JSON.parse(response.text);
+    } catch (e) {
+          console.error("Refine parse failed", e);
+          return {};
     }
-  });
-
-  try {
-    return JSON.parse(response.text);
-  } catch (e) {
-    console.error("Refine parse failed", e);
-    return {};
-  }
 };
 
 export const generateAbstract = async (blocks: any, projectName: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
-    contents: `Generate abstract for "${projectName}". Canvas: ${JSON.stringify(blocks)}`,
-  });
-  return response.text;
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: `Generate abstract for "${projectName}". Canvas: ${JSON.stringify(blocks)}`,
+    });
+    return response.text;
 };
 
 export const generateGrantOutline = async (blocks: any, projectName: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  const prompt = `Generate a comprehensive Grant Proposal Outline for "${projectName}" using the following Research Compass data: ${JSON.stringify(blocks)}.
-  
-  Key Features of a Good NSF Proposal Project Description
-Clarity and Significance
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-Opens with a compelling problem statement that establishes why this research matters now
-Clearly articulates intellectual merit and broader impacts throughout (not just in separate sections)
-Connects to the specific program's priorities and review criteria
+    const prompt = `Generate a comprehensive Grant Proposal Outline for "${projectName}" using the following Research Compass data: ${JSON.stringify(blocks)}.
 
-Strong Scientific Foundation
+    Key Features of a Good NSF Proposal Project Description
+    Clarity and Significance
 
-Demonstrates deep knowledge of the field and positions work within current literature
-Identifies genuine gaps—not just "no one has done X" but why X matters
-Presents preliminary data that de-risks the proposal and shows feasibility
+    Opens with a compelling problem statement that establishes why this research matters now
+    Clearly articulates intellectual merit and broader impacts throughout (not just in separate sections)
+    Connects to the specific program's priorities and review criteria
 
-Well-Structured Approach
+    Strong Scientific Foundation
 
-Specific, testable hypotheses or clear research questions
-Logical flow from aims to methods to expected outcomes
-Realistic timeline with milestones
-Anticipates challenges and describes alternative approaches
+    Demonstrates deep knowledge of the field and positions work within current literature
+    Identifies genuine gaps—not just "no one has done X" but why X matters
+    Presents preliminary data that de-risks the proposal and shows feasibility
 
-Rigor and Reproducibility
+    Well-Structured Approach
 
-Addresses statistical considerations, controls, and validation strategies
-Describes how data will be managed and shared
+    Specific, testable hypotheses or clear research questions
+    Logical flow from aims to methods to expected outcomes
+    Realistic timeline with milestones
+    Anticipates challenges and describes alternative approaches
 
-Integration of Broader Impacts
+    Rigor and Reproducibility
 
-Goes beyond boilerplate—shows genuine integration with the research
-Specific, measurable activities with clear outcomes
+    Addresses statistical considerations, controls, and validation strategies
+    Describes how data will be managed and shared
 
+    Integration of Broader Impacts
 
-Typical Headings:
+    Goes beyond boilerplate—shows genuine integration with the research
+    Specific, measurable activities with clear outcomes
 
-- Introduction / Project Overview
-- Background and Rationale
-- Preliminary Studies / Results
-- Research Plan (or Objectives and Approach)
-  Aim 1, Aim 2, Aim 3 (as subsections)
-- Expected Outcomes and Significance
-- Timeline
-- Broader Impacts
+    Typical Headings:
 
-  Ensure the output is well-formatted, professional, and directly utilizes the specific details from the provided Research Compass data.`;
+    - Introduction / Project Overview
+    - Background and Rationale
+    - Preliminary Studies / Results
+    - Research Plan (or Objectives and Approach)
+    Aim 1, Aim 2, Aim 3 (as subsections)
+    - Expected Outcomes and Significance
+    - Timeline
+    - Broader Impacts
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
-    contents: prompt,
-  });
-  return response.text;
+    Ensure the output is well-formatted, professional, and directly utilizes the specific details from the provided Research Compass data.`;
+
+    const response = await ai.models.generateContent({
+          model: "gemini-2.0-flash",
+          contents: prompt,
+    });
+    return response.text;
 };
