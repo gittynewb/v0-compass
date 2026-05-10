@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const MODEL = "gemini-2.0-flash-lite";
+const MODEL = "gemini-2.5-flash";
 // Helper to define block schema subsets for modular processing
 const generateBlockSchema = (keys: string[]) => {
       const properties: any = {};
