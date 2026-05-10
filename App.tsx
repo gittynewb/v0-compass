@@ -183,7 +183,6 @@ const App: React.FC = () => {
           }
         });
         return { ...prev, blocks: newBlocks };
-      });
       setWarnings(prev => prev.filter(w => w !== warning));
     } catch (err) { alert("AI resolution failed."); } finally { setFixingWarning(null); setProcessingStatus(""); }
   };
@@ -487,8 +486,9 @@ const App: React.FC = () => {
           setProject(prev => {
             const newBlocks = { ...prev.blocks };
             Object.entries(updates).forEach(([key, val]) => { 
-              if (newBlocks[key as BlockId] && Array.isArray(val)) { 
-                val.forEach(text => {
+          if (newBlocks[key as BlockId] && (Array.isArray(val) || typeof val === 'string') && val) {
+                          const valArray = Array.isArray(val) ? val : [val];
+                          valArray.forEach(text => {
                   newBlocks[key as BlockId].items.push({ id: `wiz-${key}-${Date.now()}-${Math.random()}`, text: text as string }); 
                 });
               } 
