@@ -183,6 +183,7 @@ const App: React.FC = () => {
           }
         });
         return { ...prev, blocks: newBlocks };
+      });
       setWarnings(prev => prev.filter(w => w !== warning));
     } catch (err) { alert("AI resolution failed."); } finally { setFixingWarning(null); setProcessingStatus(""); }
   };
