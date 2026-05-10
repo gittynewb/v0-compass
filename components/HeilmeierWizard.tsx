@@ -23,7 +23,7 @@ export const HeilmeierWizard: React.FC<WizardProps> = ({ onUpdateCanvas, onClose
 
     setIsLoading(true);
     try {
-      const updates = await processWizardInput(question.question, answer);
+      const updates = await processWizardInput(question.question, answer, question.targetBlocks);
       onUpdateCanvas(updates);
       setChatHistory([...chatHistory, { q: question.question, a: answer }]);
       setAnswer('');

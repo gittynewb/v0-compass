@@ -22,7 +22,7 @@ export const DiscoveryCanvasWizard: React.FC<WizardProps> = ({ onUpdateCanvas, o
 
     setIsLoading(true);
     try {
-      const updates = await processWizardInput(question.question, answer);
+      const updates = await processWizardInput(question.question, answer, question.targetBlocks);
       onUpdateCanvas(updates);
       setChatHistory([...chatHistory, { q: question.question, a: answer }]);
       setAnswer('');
