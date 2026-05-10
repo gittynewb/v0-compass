@@ -8,7 +8,7 @@ interface WizardProps {
   onClose: () => void;
 }
 
-export const DiscoveryCanvasWizard: React.FC<WizardProps> = ({ onUpdateCanvas, onClose }) => {
+export const DiscoveryCanvasWizard: React.FC<WizardProps> = ({ onUpdateCanvas, honClose }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answer, setAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,7 @@ export const DiscoveryCanvasWizard: React.FC<WizardProps> = ({ onUpdateCanvas, o
 
     setIsLoading(true);
     try {
-      const updates = await processWizardInput(question.question, answer);
+      const updates = await processWizardInput(question.question, answer, question.targetBlocks);
       onUpdateCanvas(updates);
       setChatHistory([...chatHistory, { q: question.question, a: answer }]);
       setAnswer('');
