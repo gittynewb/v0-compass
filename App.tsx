@@ -60,13 +60,6 @@ const App: React.FC = () => {
     localStorage.setItem('compass_user', JSON.stringify(u));
   };
 
-  const handleLogout = () => {
-    if (window.confirm("Log out of research suite?")) {
-      setUser(null);
-      localStorage.removeItem('compass_user');
-    }
-  };
-
   const handleReset = () => {
     if (window.confirm("Clear all compass contents?")) {
       // Force a deep copy of the initial state to ensure a completely clean slate
@@ -79,6 +72,9 @@ const App: React.FC = () => {
         threads: [],
         updatedAt: Date.now()
       }));
+      setWarnings([]);
+      setProcessingStatus("Workspace cleared.");
+      setTimeout(() => setProcessingStatus(""), 3000);
     }
   };
 
@@ -198,7 +194,7 @@ const App: React.FC = () => {
 
     setIsImporting(true);
     setImportStage({ current: 1, total: 4 });
-    setProcessingStatus("Streaming PDF data...");
+    setProcessingStatus("Streaming research data...");
 
     const reader = new FileReader();
     reader.onload = async (event) => {
@@ -341,11 +337,6 @@ const App: React.FC = () => {
             </button>
           </div>
           <div className="flex justify-end gap-3 items-center">
-             <div className="text-right hidden md:block">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">{user.name}</p>
-              <button onClick={handleLogout} className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-tight">Sign Out</button>
-            </div>
-            <div className="h-8 w-px bg-slate-100 mx-1" />
             <button onClick={handleReset} className="bg-rose-50 text-rose-700 hover:bg-rose-100 px-4 py-1.5 rounded-lg font-bold text-[11px] flex items-center gap-1.5 border border-rose-100 shadow-sm transition-all">
               RESET
             </button>
@@ -453,13 +444,13 @@ const App: React.FC = () => {
             <button onClick={() => setShowThreads(!showThreads)} className={`px-4 py-1.5 rounded-lg font-bold text-[11px] border transition-all active:scale-95 ${showThreads ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-600 border-indigo-100'}`}>LOGIC FLOW</button>
           </div>
           <div className="flex gap-2 relative" ref={draftMenuRef}>
-            <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".pdf" className="hidden" />
+            <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".pdf,.pptx" className="hidden" />
             <button 
               onClick={() => fileInputRef.current?.click()} 
               disabled={isImporting}
               className="bg-white border border-slate-200 text-slate-700 px-4 py-1.5 rounded-lg font-bold text-[11px] shadow-sm flex items-center gap-2 transition-all hover:bg-slate-50 active:scale-95 disabled:opacity-50"
             >
-              IMPORT PDF
+              IMPORT FILE
             </button>
             <button onClick={handleExportPPT} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-1.5 rounded-lg font-bold text-[11px] shadow-sm transition-all active:scale-95">EXPORT PPT</button>
             <button onClick={() => setShowDraftMenu(!showDraftMenu)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-1.5 rounded-lg font-bold text-[11px] shadow-sm flex items-center gap-2 transition-all active:scale-95">
@@ -495,8 +486,14 @@ const App: React.FC = () => {
         <aside className="w-[480px] border-l bg-white shadow-2xl shrink-0 flex flex-col z-50 animate-in slide-in-from-right duration-300"><DiscoveryCanvasWizard onUpdateCanvas={(updates) => {
           setProject(prev => {
             const newBlocks = { ...prev.blocks };
-            Object.entries(updates).forEach(([key, val]) => { if (newBlocks[key as BlockId] && val) { newBlocks[key as BlockId].items.push({ id: `wiz-${Date.now()}-${Math.random()}`, text: val as string }); } });
-            return { ...prev, blocks: newBlocks };
+            Object.entries(updates).forEach(([key, val]) => { 
+              if (newBlocks[key as BlockId] && Array.isArray(val)) { 
+                val.forEach(text => {
+                  newBlocks[key as BlockId].items.push({ id: `wiz-${key}-${Date.now()}-${Math.random()}`, text: text as string }); 
+                });
+              } 
+            });
+            return { ...prev, blocks: newBlocks, updatedAt: Date.now() };
           });
         }} onClose={() => setShowWizard(false)} /></aside>
       )}
