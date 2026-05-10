@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
+const MODEL = "gemini-2.0-flash-lite";
 // Helper to define block schema subsets for modular processing
 const generateBlockSchema = (keys: string[]) => {
       const properties: any = {};
@@ -16,7 +17,7 @@ const generateBlockSchema = (keys: string[]) => {
 export const detectJargon = async (text: string) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: `Analyze the following research statement for jargon and buzzwords. Identify them and suggest simpler alternatives. Return the result in a JSON array of objects with 'term' and 'alternative'.
 
               Statement: "${text}"`,
@@ -41,7 +42,7 @@ export const detectJargon = async (text: string) => {
 export const checkFalsifiability = async (hypothesis: string) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: `Evaluate the following hypothesis for falsifiability. If it is vague, suggest a version with a measurable metric. Return a JSON object with 'isFalsifiable' (boolean) and 'suggestion' (string).
 
               Hypothesis: "${hypothesis}"`,
@@ -110,7 +111,7 @@ export const runOrphanCheck = async (blocks: any) => {
       Return a JSON array of strings (max 3). Be technical and specific.`;
 
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: prompt,
               config: {
                         responseMimeType: "application/json",
@@ -127,7 +128,7 @@ export const fixLogicalGap = async (blocks: any, warning: string) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const blockKeys = Object.keys(blocks);
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: `The following research project has a logical gap: "${warning}". Resolve it by generating content for the relevant canvas blocks.`,
               config: {
                         responseMimeType: "application/json",
@@ -148,7 +149,7 @@ export const processWizardInput = async (question: string, answer: string, targe
       Keep each bullet to 1-2 sentences. Be precise and technical.`;
 
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: prompt,
               config: {
                         responseMimeType: "application/json",
@@ -197,7 +198,7 @@ export const processDocumentImport = async (data: string, mimeType: string, onUp
               Return ONLY JSON. Ensure maximum coverage for these specific blocks.`;
 
               const response = await ai.models.generateContent({
-                        model: "gemini-1.5-flash",
+                        model: MODEL,
                         contents: [
                             { text: prompt },
                             { inlineData: { data: base64Data, mimeType: mimeType } }
@@ -243,7 +244,7 @@ export const refineCanvas = async (blocks: any) => {
       DATA: ${JSON.stringify(simplifiedBlocks)}`;
 
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: prompt,
               config: {
                         temperature: 0.1,
@@ -263,7 +264,7 @@ export const refineCanvas = async (blocks: any) => {
 export const generateAbstract = async (blocks: any, projectName: string) => {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: `Generate abstract for "${projectName}". Canvas: ${JSON.stringify(blocks)}`,
       });
       return response.text;
@@ -318,7 +319,7 @@ export const generateGrantOutline = async (blocks: any, projectName: string) => 
       Ensure the output is well-formatted, professional, and directly utilizes the specific details from the provided Research Compass data.`;
 
       const response = await ai.models.generateContent({
-              model: "gemini-1.5-flash",
+              model: MODEL,
               contents: prompt,
       });
       return response.text;
